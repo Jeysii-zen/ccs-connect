@@ -12,8 +12,7 @@ class AuthenticationService
 {
     public function __construct(
         protected ActivityLogService $activityLogService
-    ) {
-    }
+    ) {}
 
     /**
      * Authenticate a user using the CCS Connect login rules.
@@ -34,7 +33,7 @@ class AuthenticationService
             ]);
         }
 
-        if (!$user) {
+        if (! $user) {
             $this->recordFailedAttempt(
                 null,
                 $normalizedEmail
@@ -51,7 +50,7 @@ class AuthenticationService
             ]);
         }
 
-        if (!Hash::check($password, $user->password)) {
+        if (! Hash::check($password, $user->password)) {
             $this->recordFailedAttempt(
                 $user,
                 $normalizedEmail
@@ -72,11 +71,13 @@ class AuthenticationService
      */
     protected function isOnCooldown(User $user): bool
     {
-        if (!$user->login_cooldown_until) {
+        $cooldownUntil = $user->login_cooldown_until;
+
+        if (! $cooldownUntil) {
             return false;
         }
 
-        if ($user->login_cooldown_until->isFuture()) {
+        if (now()->parse($cooldownUntil)->isFuture()) {
             return true;
         }
 
@@ -108,7 +109,7 @@ class AuthenticationService
             'Failed login attempt.'
         );
 
-        if (!$user) {
+        if (! $user) {
             return;
         }
 

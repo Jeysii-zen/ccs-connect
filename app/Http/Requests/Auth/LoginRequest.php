@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use App\Services\AuthenticationService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -50,7 +51,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the authenticated user produced by the authentication service.
      */
-    public function authenticatedUser()
+    public function authenticatedUser(): User
     {
         return $this->attributes->get('authenticated_user');
     }
