@@ -2,7 +2,7 @@ import GuestLayout, {
     AuthButton,
     AuthInput,
     AuthPasswordInput,
-} from '@/Layouts/GuestLayout';
+} from '@/layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
     CheckCircle2,
