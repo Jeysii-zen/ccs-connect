@@ -1,3 +1,102 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+        Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* Brand palette (taken from the reference UI) */
+    --color-brand-50: #eef5ff;
+    --color-brand-100: #dce9ff;
+    --color-brand-200: #bcd3ff;
+    --color-brand-300: #8db4ff;
+    --color-brand-400: #5b93ff;
+    --color-brand-500: #2f74fb;
+    --color-brand-600: #0a63f5;
+    --color-brand-700: #084fc7;
+    --color-ink: #0b1226;
+
+    --shadow-card: 0 30px 80px -24px rgba(15, 42, 100, 0.18),
+        0 2px 10px rgba(15, 42, 100, 0.04);
+
+    /* Motion */
+    --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    --animate-fade-in: fade-in 0.9s ease-out both;
+    --animate-float: float 7s ease-in-out infinite;
+    --animate-float-slow: float 9s ease-in-out infinite;
+    --animate-node: node-pulse 3.2s ease-in-out infinite;
+
+    @keyframes fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes float {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-6px);
+        }
+    }
+
+    @keyframes node-pulse {
+        0%,
+        100% {
+            opacity: 0.45;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+}
+
+@layer base {
+    body {
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+    }
+}
+
+/*
+ * One orchestrated entrance for auth screens:
+ * direct children of `.stagger` rise in one after another.
+ */
+.stagger > * {
+    animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.11s; }
+.stagger > *:nth-child(3) { animation-delay: 0.17s; }
+.stagger > *:nth-child(4) { animation-delay: 0.23s; }
+.stagger > *:nth-child(5) { animation-delay: 0.29s; }
+.stagger > *:nth-child(6) { animation-delay: 0.35s; }
+.stagger > *:nth-child(7) { animation-delay: 0.41s; }
+.stagger > *:nth-child(8) { animation-delay: 0.47s; }
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

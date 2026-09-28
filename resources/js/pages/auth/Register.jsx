@@ -1,13 +1,21 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
+import GuestLayout, {
+    AuthButton,
+    AuthInput,
+    AuthPasswordInput,
+} from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import {
+    CheckCircle2,
+    LockKeyhole,
+    Mail,
+    UserPlus,
+    UserRound,
+} from 'lucide-react';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -22,99 +30,131 @@ export default function Register() {
     };
 
     return (
-        <GuestLayout>
-            <Head title="Register" />
+        <GuestLayout mode="register">
+            <Head title="Create Student Account" />
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
+            <div className="stagger">
+                {/* Header */}
+                <div className="mb-7">
+                    <h2 className="text-[2rem] font-bold leading-tight tracking-tight text-ink">
+                        Create Student Account
+                    </h2>
 
-                    <TextInput
-                        id="name"
-                        name="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        autoComplete="name"
-                        isFocused={true}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.name} className="mt-2" />
+                    <p className="mt-1.5 text-base leading-6 text-slate-500">
+                        Register your account to access CCS Connect services
+                    </p>
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="email" value="Email" />
+                <form onSubmit={submit} className="stagger space-y-5">
+                    {/* First Name + Last Name */}
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <AuthInput
+                            id="first_name"
+                            type="text"
+                            label="First Name"
+                            icon={UserRound}
+                            value={data.first_name}
+                            error={errors.first_name}
+                            autoComplete="given-name"
+                            autoFocus
+                            placeholder="First name"
+                            onChange={(e) =>
+                                setData('first_name', e.target.value)
+                            }
+                        />
 
-                    <TextInput
+                        <AuthInput
+                            id="last_name"
+                            type="text"
+                            label="Last Name"
+                            icon={UserRound}
+                            value={data.last_name}
+                            error={errors.last_name}
+                            autoComplete="family-name"
+                            placeholder="Last name"
+                            onChange={(e) =>
+                                setData('last_name', e.target.value)
+                            }
+                        />
+                    </div>
+
+                    <AuthInput
                         id="email"
                         type="email"
-                        name="email"
+                        label="Email Address"
+                        icon={Mail}
                         value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
+                        error={errors.email}
+                        autoComplete="email"
+                        placeholder="Enter your email address"
                         onChange={(e) => setData('email', e.target.value)}
-                        required
                     />
 
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
+                    <AuthPasswordInput
                         id="password"
-                        type="password"
-                        name="password"
+                        label="Password"
+                        icon={LockKeyhole}
                         value={data.password}
-                        className="mt-1 block w-full"
+                        error={errors.password}
                         autoComplete="new-password"
+                        placeholder="Create a password"
                         onChange={(e) => setData('password', e.target.value)}
-                        required
                     />
 
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
+                    <AuthPasswordInput
                         id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
+                        label="Confirm Password"
+                        icon={LockKeyhole}
                         value={data.password_confirmation}
-                        className="mt-1 block w-full"
+                        error={errors.password_confirmation}
                         autoComplete="new-password"
+                        placeholder="Confirm your password"
                         onChange={(e) =>
                             setData('password_confirmation', e.target.value)
                         }
-                        required
                     />
 
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
-                </div>
+                    {/* Account notice */}
+                    <div className="flex gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4">
+                        <CheckCircle2
+                            aria-hidden="true"
+                            size={20}
+                            className="mt-0.5 shrink-0 text-brand-600"
+                        />
 
-                <div className="mt-4 flex items-center justify-end">
+                        <p className="text-sm leading-5 text-slate-600">
+                            Your account will be created as a{' '}
+                            <span className="font-semibold text-ink">
+                                Student
+                            </span>
+                            . Make sure your information is correct before
+                            continuing.
+                        </p>
+                    </div>
+
+                    <AuthButton
+                        processing={processing}
+                        icon={UserPlus}
+                        loadingText="Creating Account..."
+                    >
+                        Create Account
+                    </AuthButton>
+                </form>
+
+                {/* Login link */}
+                <div className="mt-7 text-center">
+                    <span className="text-sm text-slate-500">
+                        Already have an account?{' '}
+                    </span>
+
                     <Link
                         href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        className="rounded text-sm font-semibold text-brand-600 transition hover:text-brand-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40"
                     >
-                        Already registered?
+                        Sign In
                     </Link>
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
-                    </PrimaryButton>
                 </div>
-            </form>
+            </div>
         </GuestLayout>
     );
 }
