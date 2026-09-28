@@ -71,6 +71,7 @@ class FortifyServiceProvider extends ServiceProvider
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
         ]));
     }
+
     /**
      * Configure rate limiting.
      */

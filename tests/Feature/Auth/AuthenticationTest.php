@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\ActivityLog;
 use App\Models\LoginAttempt;
 use App\Models\User;
 
