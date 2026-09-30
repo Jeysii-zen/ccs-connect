@@ -36,7 +36,7 @@ const pageContent = {
                 <span className="block">
                     connected with the{' '}
                     <span className="font-semibold text-brand-600">
-                        College of Computer Studies.
+                        College of Computing Studies.
                     </span>
                 </span>
             </>
