@@ -4,7 +4,7 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
-export default function Edit({ mustVerifyEmail, status }) {
+export default function Edit() {
     return (
         <CCSConnectLayout>
             <Head title="Profile" />
@@ -27,11 +27,7 @@ export default function Edit({ mustVerifyEmail, status }) {
 
                 <div className="space-y-5">
                     <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-7">
-                        <UpdateProfileInformationForm
-                            mustVerifyEmail={mustVerifyEmail}
-                            status={status}
-                            className="max-w-2xl"
-                        />
+                        <UpdateProfileInformationForm className="max-w-2xl"/>
                     </section>
 
                     <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-7">
