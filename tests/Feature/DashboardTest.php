@@ -8,10 +8,9 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('verified students can visit the dashboard', function () {
+test('students can visit the dashboard', function () {
     $student = User::factory()->create([
         'role' => 'student',
-        'email_verified_at' => now(),
     ]);
 
     $this->actingAs($student);
@@ -24,7 +23,6 @@ test('verified students can visit the dashboard', function () {
 test('non-students cannot visit the student dashboard', function () {
     $faculty = User::factory()->create([
         'role' => 'faculty',
-        'email_verified_at' => now(),
     ]);
 
     $this->actingAs($faculty);

@@ -3,12 +3,11 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -21,6 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'first_name',
         'last_name',
+        'student_number',
         'email',
         'password',
         'profile_picture_path',
@@ -28,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'year_level',
         'block_number',
         'account_status',
+        'must_change_password',
     ];
 
     /**
@@ -48,7 +49,6 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'failed_login_attempts' => 'integer',
             'login_cooldown_until' => 'datetime',

@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import {
     Eye,
     EyeOff,
-    FileText,
     Loader2,
     Shield,
     UserRound,
@@ -26,26 +25,10 @@ const pageContent = {
             </>
         ),
     },
-    register: {
-        title: 'Welcome to CCS Connect',
-        description: (
-            <>
-                <span className="block">
-                    Create your student account and stay
-                </span>
-                <span className="block">
-                    connected with the{' '}
-                    <span className="font-semibold text-brand-600">
-                        College of Computing Studies.
-                    </span>
-                </span>
-            </>
-        ),
-    },
 };
 
 /* -------------------------------------------------------------------------- */
-/*  Shared auth form components (used by Login.jsx and Register.jsx)          */
+/*  Shared auth form components used by the login flow          */
 /* -------------------------------------------------------------------------- */
 
 export function AuthInput({
@@ -363,8 +346,8 @@ function HeroIllustration() {
 /*  Layout                                                                    */
 /* -------------------------------------------------------------------------- */
 
-export default function GuestLayout({ children, mode = 'login' }) {
-    const content = pageContent[mode] ?? pageContent.login;
+export default function GuestLayout({ children }) {
+    const content = pageContent.login;
 
     return (
         <div className="min-h-screen overflow-hidden bg-[#f8faff] text-ink">
@@ -431,11 +414,7 @@ export default function GuestLayout({ children, mode = 'login' }) {
                 <section className="relative flex w-full items-center justify-center px-5 py-8 sm:px-8 lg:min-h-screen lg:w-[48%] lg:px-12">
                     <div className="relative z-10 w-full max-w-150 animate-fade-up rounded-3xl border border-white bg-white p-7 shadow-card sm:p-10 lg:p-12">
                         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                            {mode === 'register' ? (
-                                <UserRound size={30} strokeWidth={1.7} />
-                            ) : (
-                                <AdminIcon size={32} />
-                            )}
+                            <AdminIcon size={32} />
                         </div>
 
                         {children}
@@ -445,20 +424,14 @@ export default function GuestLayout({ children, mode = 'login' }) {
                             <div className="h-px flex-1 bg-slate-200" />
 
                             <span className="flex shrink-0 items-center justify-center text-brand-600">
-                                {mode === 'register' ? (
-                                    <FileText size={22} strokeWidth={1.6} />
-                                ) : (
-                                    <Shield size={22} strokeWidth={1.6} />
-                                )}
+                                <Shield size={22} strokeWidth={1.6} />
                             </span>
 
                             <div className="h-px flex-1 bg-slate-200" />
                         </div>
 
                         <p className="mt-3 text-center text-sm text-slate-500">
-                            {mode === 'register'
-                                ? 'Create your secure CCS Connect account'
-                                : 'Secure administrator access'}
+                            Secure CCS Connect access
                         </p>
                     </div>
                 </section>

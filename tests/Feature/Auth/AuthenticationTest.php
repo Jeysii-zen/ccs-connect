@@ -118,21 +118,6 @@ test('successful login resets failed login attempts and cooldown', function () {
     $this->assertAuthenticated();
 });
 
-test('pending verification users cannot authenticate', function () {
-    $user = User::factory()->create([
-        'account_status' => 'PENDING_VERIFICATION',
-    ]);
-
-    $response = $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'password',
-    ]);
-
-    $this->assertGuest();
-
-    $response->assertSessionHasErrors('email');
-});
-
 test('deactivated users cannot authenticate', function () {
     $user = User::factory()->create([
         'account_status' => 'DEACTIVATED',

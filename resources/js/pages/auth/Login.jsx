@@ -109,19 +109,6 @@ export default function Login({ status, canResetPassword }) {
                     </AuthButton>
                 </form>
 
-                {/* Student registration */}
-                <div className="mt-7 text-center">
-                    <span className="text-sm text-slate-500">
-                        Don't have a student account?{' '}
-                    </span>
-
-                    <Link
-                        href={route('register')}
-                        className="rounded text-sm font-semibold text-brand-600 transition hover:text-brand-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40"
-                    >
-                        Create Account
-                    </Link>
-                </div>
             </div>
         </GuestLayout>
     );
