@@ -19,7 +19,9 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'first_name',
+        'middle_name',
         'last_name',
+        'suffix',
         'student_number',
         'email',
         'password',
@@ -27,6 +29,7 @@ class User extends Authenticatable
         'role',
         'year_level',
         'block_number',
+        'employment_type',
         'account_status',
         'must_change_password',
     ];
@@ -50,6 +53,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'failed_login_attempts' => 'integer',
             'login_cooldown_until' => 'datetime',
             'deactivated_at' => 'datetime',

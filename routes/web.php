@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Auth\FirstLoginPasswordController;
+use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -14,21 +17,55 @@ Route::get('/', function () {
     ]);
 });
 
+Route::middleware('auth')->group(function () {
+    Route::get(
+        '/first-login/password',
+        [FirstLoginPasswordController::class, 'edit']
+    )->name('password.first-login.edit');
+
+    Route::put(
+        '/first-login/password',
+        [FirstLoginPasswordController::class, 'update']
+    )->name('password.first-login.update');
+});
+
+Route::middleware([
+    'auth',
+    'must.change.password',
+])->group(function () {
+    Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])
+        ->name('ccs.password.confirm');
+
+    Route::post('/confirm-password', [ConfirmablePasswordController::class, 'store'])
+        ->name('ccs.password.confirm.store');
+
+    Route::put('/password', [PasswordController::class, 'update'])
+        ->name('ccs.password.update');
+});
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
         'student' => request()->user(),
     ]);
-})->middleware(['auth', 'role:student'])->name('dashboard');
+})->middleware(['auth', 'must.change.password', 'role:student'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware([
+    'auth',
+    'must.change.password',
+    'role:admin',
+])->group(function () {
+    Route::get('/admin/accounts', [AccountManagementController::class, 'index'])
+        ->name('admin.accounts.index');
+
+    Route::post('/admin/accounts/students', [AccountManagementController::class, 'storeStudent'])
+        ->name('admin.accounts.students.store');
+
+    Route::post('/admin/accounts/faculty', [AccountManagementController::class, 'storeFaculty'])
+        ->name('admin.accounts.faculty.store');
+});
+
+Route::middleware(['auth', 'must.change.password'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/accounts', [AccountManagementController::class, 'index'])
-        ->name('admin.accounts.index');
-});
-
-require __DIR__.'/auth.php';

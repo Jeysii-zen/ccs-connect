@@ -26,7 +26,9 @@ class UserFactory extends Factory
     {
         return [
             'first_name' => fake()->firstName(),
+            'middle_name' => null,
             'last_name' => fake()->lastName(),
+            'suffix' => null,
             'student_number' => null,
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
@@ -34,6 +36,7 @@ class UserFactory extends Factory
             'role' => 'student',
             'year_level' => null,
             'block_number' => null,
+            'employment_type' => null,
             'account_status' => 'ACTIVE',
             'must_change_password' => false,
         ];
