@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountManagementController;
-use App\Http\Controllers\Auth\FirstLoginPasswordController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\FirstLoginPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;

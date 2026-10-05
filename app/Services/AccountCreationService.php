@@ -15,7 +15,7 @@ class AccountCreationService
     /**
      * Create a Student account and return the temporary password.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createStudent(array $data, User $createdBy): string
     {
@@ -50,7 +50,7 @@ class AccountCreationService
     /**
      * Create a Faculty account and return the temporary password.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function createFaculty(array $data, User $createdBy): string
     {
