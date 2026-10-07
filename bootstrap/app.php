@@ -18,6 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectUsersTo(function (Request $request) {
+            $user = $request->user();
+
+            if ($user?->role === 'admin') {
+                return route('admin.accounts.index');
+            }
+
+            return route('dashboard');
+        });
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'must.change.password' => MustChangePasswordMiddleware::class,
