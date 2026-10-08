@@ -777,10 +777,44 @@ export default function Index() {
 
                                                         <button
                                                             type="button"
-                                                            disabled
-                                                            title="Deactivate will be implemented in the next account-management phase."
-                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 disabled:cursor-not-allowed"
+                                                            title={`Deactivate ${formatFullName(student)}`}
                                                             aria-label={`Deactivate ${formatFullName(student)}`}
+                                                            onClick={() => {
+                                                                if (
+                                                                    ! window.confirm(
+                                                                        `Deactivate ${formatFullName(student)}? This account will no longer be able to log in.`
+                                                                    )
+                                                                ) {
+                                                                    return;
+                                                                }
+
+                                                                router.patch(
+                                                                    route(
+                                                                        'admin.accounts.students.deactivate',
+                                                                        student.id
+                                                                    ),
+                                                                    {},
+                                                                    {
+                                                                        preserveScroll: true,
+                                                                        onSuccess: () => {
+                                                                            setNotification({
+                                                                                type: 'success',
+                                                                                title: 'Account Deactivated',
+                                                                                message: `Successfully deactivated Student Account (${student.student_number})`,
+                                                                            });
+                                                                        },
+                                                                        onError: () => {
+                                                                            setNotification({
+                                                                                type: 'error',
+                                                                                title: 'Deactivation Failed',
+                                                                                message:
+                                                                                    'The student account could not be deactivated. Please try again.',
+                                                                            });
+                                                                        },
+                                                                    }
+                                                                );
+                                                            }}
+                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                                                         >
                                                             <Trash2 size={15} />
                                                         </button>

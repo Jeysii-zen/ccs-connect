@@ -124,16 +124,27 @@ class AccountManagementController extends Controller
         ])->with('account_updated', 'Faculty account updated successfully.');
     }
 
-    public function deactivate(User $user): RedirectResponse
-    {
-        abort_if($user->role === 'admin', 403);
+    public function deactivateStudent(
+        User $student,
+        AccountManagementService $accountManagementService
+    ): RedirectResponse {
+        abort_unless(
+            $student->role === 'student'
+                && $student->account_status === 'ACTIVE',
+            404
+        );
 
-        $user->forceFill([
-            'account_status' => 'DEACTIVATED',
-            'deactivated_at' => now(),
-        ])->save();
+        $accountManagementService->deactivateStudent(
+            $student,
+            request()->user()
+        );
 
-        return back();
+        return to_route('admin.accounts.index', [
+            'section' => 'student',
+        ])->with(
+            'account_deactivated',
+            'Student account deactivated successfully.'
+        );
     }
 
     public function reactivate(User $user): RedirectResponse

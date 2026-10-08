@@ -432,3 +432,82 @@ test('faculty update rejects a duplicate faculty id', function () {
 
     $response->assertSessionHasErrors('faculty_id');
 });
+
+test('admins can deactivate a student account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+    ]);
+
+    $student = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'ACTIVE',
+        'student_number' => '24-02-099',
+        'last_seen_at' => now(),
+    ]);
+
+    $this->actingAs($admin);
+
+    $response = $this->patch(
+        route('admin.accounts.students.deactivate', $student)
+    );
+
+    $response->assertRedirect(route('admin.accounts.index', [
+        'section' => 'student',
+    ]));
+
+    $student->refresh();
+
+    expect($student->account_status)->toBe('DEACTIVATED')
+        ->and($student->deactivated_at)->not->toBeNull()
+        ->and($student->last_seen_at)->toBeNull();
+
+    expect(ActivityLog::query()
+        ->where('user_id', $admin->id)
+        ->where('action', 'ACCOUNT_DEACTIVATED')
+        ->where('module', 'Account Management')
+        ->exists()
+    )->toBeTrue();
+});
+
+test('non-admin users cannot deactivate student accounts', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    $target = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $this->actingAs($student);
+
+    $response = $this->patch(
+        route('admin.accounts.students.deactivate', $target)
+    );
+
+    $response->assertForbidden();
+
+    $target->refresh();
+
+    expect($target->account_status)->toBe('ACTIVE');
+});
+
+test('admins cannot deactivate an already deactivated student account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+    ]);
+
+    $student = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'DEACTIVATED',
+        'deactivated_at' => now(),
+    ]);
+
+    $this->actingAs($admin);
+
+    $response = $this->patch(
+        route('admin.accounts.students.deactivate', $student)
+    );
+
+    $response->assertNotFound();
+});

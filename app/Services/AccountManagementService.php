@@ -153,4 +153,25 @@ class AccountManagementService
             );
         });
     }
+
+    /**
+     * Deactivate a student account.
+     */
+    public function deactivateStudent(User $student, User $deactivatedBy): void
+    {
+        DB::transaction(function () use ($student, $deactivatedBy): void {
+            $student->update([
+                'account_status' => 'DEACTIVATED',
+                'deactivated_at' => now(),
+                'last_seen_at' => null,
+            ]);
+
+            $this->activityLogService->log(
+                $deactivatedBy,
+                'ACCOUNT_DEACTIVATED',
+                'Account Management',
+                "Deactivated Student account for user ID {$student->id}."
+            );
+        });
+    }
 }
