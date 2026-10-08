@@ -62,8 +62,16 @@ Route::middleware([
 
     Route::post('/admin/accounts/faculty', [AccountManagementController::class, 'storeFaculty'])
         ->name('admin.accounts.faculty.store');
+
+    Route::patch('/admin/accounts/{user}/deactivate', [AccountManagementController::class, 'deactivate'])
+        ->name('admin.accounts.deactivate');
+
+    Route::patch('/admin/accounts/{user}/reactivate', [AccountManagementController::class, 'reactivate'])
+        ->name('admin.accounts.reactivate');
+
     Route::put('/admin/accounts/students/{student}', [AccountManagementController::class, 'updateStudent'])
         ->name('admin.accounts.students.update');
+
     Route::put('/admin/accounts/faculty/{faculty}', [AccountManagementController::class, 'updateFaculty'])
         ->name('admin.accounts.faculty.update');
 });

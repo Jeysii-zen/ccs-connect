@@ -381,6 +381,7 @@ export default function Index() {
         studentYearLevel,
         studentBlockNumber,
     ]);
+
     const studentForm = useForm({
         first_name: '',
         middle_name: '',
@@ -389,6 +390,18 @@ export default function Index() {
         year_level: '',
         block_number: '',
     });
+
+    const [editingStudent, setEditingStudent] = useState(null);
+
+    const studentEditForm = useForm({
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        student_number: '',
+        year_level: '',
+        block_number: '',
+    });
+
     const facultyForm = useForm({
         first_name: '',
         middle_name: '',
@@ -409,13 +422,17 @@ export default function Index() {
     const showSuccessNotification = (accountType, identifier) => {
         setNotification({
             type: 'success',
+            title: 'Account Created',
             message: `Successfully added ${accountType} Account (${identifier})`,
         });
     };
+
     const showErrorNotification = (accountType, errors) => {
         const firstError = Object.values(errors ?? {})[0];
+
         setNotification({
             type: 'error',
+            title: 'Account Creation Failed',
             message:
                 firstError ||
                 `Failed to create ${accountType} Account. Please check the form and try again.`,
@@ -423,7 +440,9 @@ export default function Index() {
     };
     const handleStudentSubmit = (event) => {
         event.preventDefault();
+
         const studentNumber = studentForm.data.student_number;
+
         studentForm.post(route('admin.accounts.students.store'), {
             preserveScroll: true,
             onSuccess: () => {
@@ -437,6 +456,36 @@ export default function Index() {
                 showErrorNotification('Student', errors);
             },
         });
+    };
+    const handleStudentEditSubmit = (event) => {
+        event.preventDefault();
+
+        if (!editingStudent) {
+            return;
+        }
+
+        studentEditForm.put(
+            route('admin.accounts.students.update', editingStudent.id),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const studentNumber = studentEditForm.data.student_number;
+
+                    setEditingStudent(null);
+                    studentEditForm.reset();
+                    studentEditForm.clearErrors();
+
+                    setNotification({
+                        type: 'success',
+                        title: 'Account Updated',
+                        message: `Successfully updated Student Account (${studentNumber})`,
+                    });
+                },
+                onError: (errors) => {
+                    showErrorNotification('Student', errors);
+                },
+            },
+        );
     };
     const handleFacultySubmit = (event) => {
         event.preventDefault();
@@ -707,9 +756,20 @@ export default function Index() {
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             type="button"
-                                                            disabled
-                                                            title="Edit will be implemented in the next account-management phase."
-                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 disabled:cursor-not-allowed"
+                                                            onClick={() => {
+                                                                setEditingStudent(student);
+                                                                studentEditForm.setData({
+                                                                    first_name: student.first_name ?? '',
+                                                                    middle_name: student.middle_name ?? '',
+                                                                    last_name: student.last_name ?? '',
+                                                                    student_number: student.student_number ?? '',
+                                                                    year_level: student.year_level ?? '',
+                                                                    block_number: student.block_number ?? '',
+                                                                });
+                                                                studentEditForm.clearErrors();
+                                                            }}
+                                                            title={`Edit ${formatFullName(student)}`}
+                                                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                                                             aria-label={`Edit ${formatFullName(student)}`}
                                                         >
                                                             <Pencil size={15} />
@@ -1243,9 +1303,7 @@ export default function Index() {
                                     : 'text-red-800'
                             }`}
                         >
-                            {notification.type === 'success'
-                                ? 'Account Created'
-                                : 'Account Creation Failed'}
+                            {notification.title}
                         </p>
                         <p className="mt-1 text-sm leading-5 text-slate-600">
                             {notification.message}
@@ -1259,6 +1317,203 @@ export default function Index() {
                     >
                         <X size={17} />
                     </button>
+                </div>
+            </div>
+        )}
+        {editingStudent && (
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-sm"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="student-edit-modal-title"
+            >
+                <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+                    <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-br from-blue-50/80 via-white to-cyan-50/70 px-6 py-5">
+                        <div>
+                            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                <Pencil size={13} />
+                                Edit Student Account
+                            </div>
+
+                            <h2
+                                id="student-edit-modal-title"
+                                className="text-xl font-bold text-slate-950"
+                            >
+                                Update Student Information
+                            </h2>
+
+                            <p className="mt-1 text-sm text-slate-500">
+                                Update the official information for{' '}
+                                <span className="font-semibold text-slate-700">
+                                    {formatFullName(editingStudent)}
+                                </span>
+                                .
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (studentEditForm.processing) {
+                                    return;
+                                }
+
+                                setEditingStudent(null);
+                                studentEditForm.reset();
+                                studentEditForm.clearErrors();
+                            }}
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label="Close student edit modal"
+                            disabled={studentEditForm.processing}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    <form
+                        onSubmit={handleStudentEditSubmit}
+                        className="max-h-[75vh] overflow-y-auto"
+                    >
+                        <div className="grid gap-5 px-6 py-6 sm:grid-cols-2">
+                            <FormField
+                                label="First Name"
+                                name="first_name"
+                                id="edit-student-first-name"
+                                value={studentEditForm.data.first_name}
+                                onChange={(event) =>
+                                    studentEditForm.setData(
+                                        'first_name',
+                                        event.target.value,
+                                    )
+                                }
+                                error={studentEditForm.errors.first_name}
+                                placeholder="Enter first name"
+                                required
+                            />
+
+                            <FormField
+                                label="Middle Name"
+                                name="middle_name"
+                                id="edit-student-middle-name"
+                                value={studentEditForm.data.middle_name}
+                                onChange={(event) =>
+                                    studentEditForm.setData(
+                                        'middle_name',
+                                        event.target.value,
+                                    )
+                                }
+                                error={studentEditForm.errors.middle_name}
+                                placeholder="Optional"
+                            />
+
+                            <FormField
+                                label="Last Name"
+                                name="last_name"
+                                id="edit-student-last-name"
+                                value={studentEditForm.data.last_name}
+                                onChange={(event) =>
+                                    studentEditForm.setData(
+                                        'last_name',
+                                        event.target.value,
+                                    )
+                                }
+                                error={studentEditForm.errors.last_name}
+                                placeholder="Enter last name"
+                                required
+                            />
+
+                            <FormField
+                                label="Student Number"
+                                name="student_number"
+                                id="edit-student-number"
+                                value={studentEditForm.data.student_number}
+                                onChange={(event) =>
+                                    studentEditForm.setData(
+                                        'student_number',
+                                        event.target.value,
+                                    )
+                                }
+                                error={studentEditForm.errors.student_number}
+                                placeholder="00-00-000"
+                                required
+                            />
+
+                            <SelectField
+                                label="Year Level"
+                                name="year_level"
+                                id="edit-student-year-level"
+                                value={studentEditForm.data.year_level}
+                                onChange={(event) =>
+                                    studentEditForm.setData(
+                                        'year_level',
+                                        event.target.value,
+                                    )
+                                }
+                                error={studentEditForm.errors.year_level}
+                                placeholder="Select year level"
+                                required
+                                options={[
+                                    {
+                                        value: '1st Year',
+                                        label: '1st Year',
+                                    },
+                                    {
+                                        value: '2nd Year',
+                                        label: '2nd Year',
+                                    },
+                                    {
+                                        value: '3rd Year',
+                                        label: '3rd Year',
+                                    },
+                                    {
+                                        value: '4th Year',
+                                        label: '4th Year',
+                                    },
+                                ]}
+                            />
+
+                            <FormField
+                                label="Block / Section"
+                                name="block_number"
+                                id="edit-student-block-number"
+                                value={studentEditForm.data.block_number}
+                                onChange={(event) =>
+                                    studentEditForm.setData(
+                                        'block_number',
+                                        event.target.value,
+                                    )
+                                }
+                                error={studentEditForm.errors.block_number}
+                                placeholder="e.g. BSIT-31"
+                                required
+                            />
+                        </div>
+
+                        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:justify-end">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingStudent(null);
+                                    studentEditForm.reset();
+                                    studentEditForm.clearErrors();
+                                }}
+                                disabled={studentEditForm.processing}
+                                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="submit"
+                                disabled={studentEditForm.processing}
+                                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {studentEditForm.processing
+                                    ? 'Saving...'
+                                    : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         )}

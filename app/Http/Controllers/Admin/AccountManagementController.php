@@ -123,4 +123,26 @@ class AccountManagementController extends Controller
             'section' => 'faculty',
         ])->with('account_updated', 'Faculty account updated successfully.');
     }
+
+    public function deactivate(User $user): RedirectResponse
+    {
+        abort_if($user->role === 'admin', 403);
+
+        $user->forceFill([
+            'account_status' => 'DEACTIVATED',
+            'deactivated_at' => now(),
+        ])->save();
+
+        return back();
+    }
+
+    public function reactivate(User $user): RedirectResponse
+    {
+        $user->forceFill([
+            'account_status' => 'ACTIVE',
+            'deactivated_at' => null,
+        ])->save();
+
+        return back();
+    }
 }
