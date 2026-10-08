@@ -233,7 +233,7 @@ test('faculty can complete the first-login password change', function () {
         ]
     );
 
-    $response->assertRedirect(route('profile.edit'));
+    $response->assertRedirect(route('dashboard'));
 
     $faculty->refresh();
 

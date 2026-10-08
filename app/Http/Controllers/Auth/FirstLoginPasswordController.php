@@ -54,10 +54,6 @@ class FirstLoginPasswordController extends Controller
             return 'admin.accounts.index';
         }
 
-        if ($request->user()->role === 'student') {
-            return 'dashboard';
-        }
-
-        return 'profile.edit';
+        return 'dashboard';
     }
 }

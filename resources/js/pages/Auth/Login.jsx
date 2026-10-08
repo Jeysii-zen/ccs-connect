@@ -8,7 +8,7 @@ import { LogIn, LockKeyhole, Mail } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        login_identifier: '',
         password: '',
         remember: false,
     });
@@ -17,7 +17,7 @@ export default function Login({ status, canResetPassword }) {
         e.preventDefault();
 
         post(route('login'), {
-            onFinish: () => reset('email', 'password'),
+            onFinish: () => reset('login_identifier', 'password'),
         });
     };
 
@@ -33,7 +33,7 @@ export default function Login({ status, canResetPassword }) {
                     </h2>
 
                     <p className="mt-1.5 text-base text-slate-500">
-                        Sign in to your Student or Faculty account
+                        Sign in to your CCS Connect account
                     </p>
                 </div>
 
@@ -49,16 +49,18 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="stagger space-y-5">
                     <AuthInput
-                        id="email"
-                        type="email"
-                        label="Email Address"
+                        id="login_identifier"
+                        type="text"
+                        label="Email / ID Number"
                         icon={Mail}
-                        value={data.email}
-                        error={errors.email}
+                        value={data.login_identifier}
+                        error={errors.login_identifier ?? errors.email}
                         autoComplete="username"
                         autoFocus
-                        placeholder="Enter your email address"
-                        onChange={(e) => setData('email', e.target.value)}
+                        placeholder="Enter your email or ID number"
+                        onChange={(e) =>
+                            setData('login_identifier', e.target.value)
+                        }
                     />
 
                     <AuthPasswordInput

@@ -13,7 +13,7 @@ test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'login_identifier' => $user->email,
         'password' => 'password',
     ]);
 
@@ -37,7 +37,7 @@ test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
     $this->post('/login', [
-        'email' => $user->email,
+        'login_identifier' => $user->email,
         'password' => 'wrong-password',
     ]);
 
@@ -61,7 +61,7 @@ test('five failed login attempts trigger a five minute cooldown', function () {
 
     foreach (range(1, 5) as $attempt) {
         $this->post('/login', [
-            'email' => $user->email,
+            'login_identifier' => $user->email,
             'password' => 'wrong-password',
         ]);
     }
@@ -86,13 +86,13 @@ test('login is blocked while five minute cooldown is active', function () {
     ]);
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'login_identifier' => $user->email,
         'password' => 'password',
     ]);
 
     $this->assertGuest();
 
-    $response->assertSessionHasErrors('email');
+    $response->assertSessionHasErrors('login_identifier');
 
     $user->refresh();
 
@@ -106,7 +106,7 @@ test('successful login resets failed login attempts and cooldown', function () {
     ]);
 
     $this->post('/login', [
-        'email' => $user->email,
+        'login_identifier' => $user->email,
         'password' => 'password',
     ]);
 
@@ -124,20 +124,20 @@ test('deactivated users cannot authenticate', function () {
     ]);
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'login_identifier' => $user->email,
         'password' => 'password',
     ]);
 
     $this->assertGuest();
 
-    $response->assertSessionHasErrors('email');
+    $response->assertSessionHasErrors('login_identifier');
 });
 
-test('unknown email creates a failed login attempt without a user id', function () {
-    $email = 'unknown-user@example.com';
+test('unknown login identifier creates a failed login attempt without a user id', function () {
+    $identifier = 'unknown-user@example.com';
 
     $this->post('/login', [
-        'email' => $email,
+        'login_identifier' => $identifier,
         'password' => 'wrong-password',
     ]);
 
@@ -145,7 +145,7 @@ test('unknown email creates a failed login attempt without a user id', function 
 
     $this->assertDatabaseHas('login_attempts', [
         'user_id' => null,
-        'email_used' => $email,
+        'email_used' => $identifier,
         'was_successful' => false,
     ]);
 });

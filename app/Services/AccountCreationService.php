@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class AccountCreationService
 {
@@ -20,14 +19,13 @@ class AccountCreationService
     public function createStudent(array $data, User $createdBy): string
     {
         return DB::transaction(function () use ($data, $createdBy): string {
-            $temporaryPassword = $this->generateTemporaryPassword();
+            $temporaryPassword = 'CCSStudent@2026';
 
             $student = User::create([
                 'first_name' => $data['first_name'],
                 'middle_name' => $data['middle_name'] ?? null,
                 'last_name' => $data['last_name'],
                 'student_number' => $data['student_number'],
-                'email' => strtolower(trim($data['email'])),
                 'password' => $temporaryPassword,
                 'role' => 'student',
                 'year_level' => $data['year_level'],
@@ -55,14 +53,14 @@ class AccountCreationService
     public function createFaculty(array $data, User $createdBy): string
     {
         return DB::transaction(function () use ($data, $createdBy): string {
-            $temporaryPassword = $this->generateTemporaryPassword();
+            $temporaryPassword = 'CCSFaculty@2026';
 
             $faculty = User::create([
                 'first_name' => $data['first_name'],
                 'middle_name' => $data['middle_name'] ?? null,
                 'last_name' => $data['last_name'],
                 'suffix' => $data['suffix'] ?? null,
-                'email' => strtolower(trim($data['email'])),
+                'faculty_id' => $data['faculty_id'],
                 'password' => $temporaryPassword,
                 'role' => 'faculty',
                 'employment_type' => $data['employment_type'],
@@ -79,16 +77,5 @@ class AccountCreationService
 
             return $temporaryPassword;
         });
-    }
-
-    private function generateTemporaryPassword(): string
-    {
-        return Str::password(
-            length: 16,
-            letters: true,
-            numbers: true,
-            symbols: true,
-            spaces: false,
-        );
     }
 }

@@ -14,61 +14,60 @@ class AuthenticationService
         protected ActivityLogService $activityLogService
     ) {}
 
-    /**
-     * Authenticate a user using the CCS Connect login rules.
-     *
-     * @throws ValidationException
-     */
     public function authenticate(
-        string $email,
+        string $identifier,
         string $password
     ): User {
-        $normalizedEmail = strtolower(trim($email));
+        $normalizedIdentifier = trim($identifier);
 
-        $user = User::where('email', $normalizedEmail)->first();
+        $user = User::query()
+            ->where('email', strtolower($normalizedIdentifier))
+            ->orWhere('student_number', $normalizedIdentifier)
+            ->orWhere('faculty_id', $normalizedIdentifier)
+            ->first();
 
         if ($user && $this->isOnCooldown($user)) {
             throw ValidationException::withMessages([
-                'email' => 'Too many failed login attempts. Please try again after the cooldown period.',
+                'login_identifier' => 'Too many failed login attempts. Please try again after the cooldown period.',
             ]);
         }
 
         if (! $user) {
             $this->recordFailedAttempt(
                 null,
-                $normalizedEmail
+                $normalizedIdentifier
             );
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'login_identifier' => trans('auth.failed'),
             ]);
         }
 
         if ($user->account_status !== AccountStatus::ACTIVE->value) {
             throw ValidationException::withMessages([
-                'email' => 'Your account is not active. Please contact the CCS Connect administrator.',
+                'login_identifier' => 'Your account is not active. Please contact the CCS Connect administrator.',
             ]);
         }
 
         if (! Hash::check($password, $user->password)) {
             $this->recordFailedAttempt(
                 $user,
-                $normalizedEmail
+                $normalizedIdentifier
             );
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'login_identifier' => trans('auth.failed'),
             ]);
         }
 
-        $this->recordSuccessfulAttempt($user, $normalizedEmail);
+        $this->recordSuccessfulAttempt(
+            $user,
+            $normalizedIdentifier
+        );
 
         return $user;
     }
 
-    /**
-     * Determine whether the user is currently under login cooldown.
-     */
     protected function isOnCooldown(User $user): bool
     {
         $cooldownUntil = $user->login_cooldown_until;
@@ -77,7 +76,7 @@ class AuthenticationService
             return false;
         }
 
-        if (now()->parse($cooldownUntil)->isFuture()) {
+        if ($cooldownUntil->isFuture()) {
             return true;
         }
 
@@ -88,16 +87,13 @@ class AuthenticationService
         return false;
     }
 
-    /**
-     * Record a failed login attempt.
-     */
     protected function recordFailedAttempt(
         ?User $user,
-        string $email
+        string $identifier
     ): void {
         LoginAttempt::create([
             'user_id' => $user?->id,
-            'email_used' => $email,
+            'email_used' => $identifier,
             'was_successful' => false,
             'attempted_at' => now(),
         ]);
@@ -126,16 +122,13 @@ class AuthenticationService
         $user->forceFill($attributes)->save();
     }
 
-    /**
-     * Record a successful login attempt and reset login security state.
-     */
     protected function recordSuccessfulAttempt(
         User $user,
-        string $email
+        string $identifier
     ): void {
         LoginAttempt::create([
             'user_id' => $user->id,
-            'email_used' => $email,
+            'email_used' => $identifier,
             'was_successful' => true,
             'attempted_at' => now(),
         ]);
@@ -143,6 +136,7 @@ class AuthenticationService
         $user->forceFill([
             'failed_login_attempts' => 0,
             'login_cooldown_until' => null,
+            'last_login_at' => now(),
         ])->save();
 
         $this->activityLogService->log(
@@ -153,9 +147,6 @@ class AuthenticationService
         );
     }
 
-    /**
-     * Record a logout activity.
-     */
     public function logLogout(User $user): void
     {
         $this->activityLogService->log(

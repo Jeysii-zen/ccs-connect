@@ -96,9 +96,9 @@ function getGreeting() {
     return 'Good evening,';
 }
 
-function getInitials(student) {
-    const first = student?.first_name?.[0] ?? '';
-    const last = student?.last_name?.[0] ?? '';
+function getInitials(user) {
+    const first = user?.first_name?.[0] ?? '';
+    const last = user?.last_name?.[0] ?? '';
 
     return `${first}${last}`.toUpperCase() || 'ST';
 }
@@ -129,16 +129,16 @@ function getProfileImage(path) {
 }
 
 
-export default function Dashboard({ student }) {
+export default function Dashboard({ user }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
 
     const fullName =
-        `${student.first_name ?? ''} ${student.last_name ?? ''}`.trim();
+        `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
 
-    const initials = getInitials(student);
-    const profileImage = getProfileImage(student.profile_picture_path);
+    const initials = getInitials(user);
+    const profileImage = getProfileImage(user.profile_picture_path);
 
     const today = formatDate(new Date());
     const greeting = getGreeting();
@@ -754,7 +754,7 @@ export default function Dashboard({ student }) {
                                             icon={CalendarDays}
                                             label="Year Level"
                                             value={
-                                                student.year_level ||
+                                                user.year_level ||
                                                 'Not provided'
                                             }
                                             description="Current year level"
@@ -764,7 +764,7 @@ export default function Dashboard({ student }) {
                                             icon={Users}
                                             label="Block"
                                             value={
-                                                student.block_number ||
+                                                user.block_number ||
                                                 'Not provided'
                                             }
                                             description="Block number"
@@ -774,7 +774,7 @@ export default function Dashboard({ student }) {
                                             icon={CheckCircle2}
                                             label="Status"
                                             value={formatStatus(
-                                                student.account_status,
+                                                user.account_status,
                                             )}
                                             description="Current account status"
                                             status
@@ -1046,4 +1046,3 @@ export default function Dashboard({ student }) {
         </>
     );
 }
-

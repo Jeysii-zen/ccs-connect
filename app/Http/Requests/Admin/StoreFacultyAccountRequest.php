@@ -42,12 +42,11 @@ class StoreFacultyAccountRequest extends FormRequest
                 'max:20',
             ],
 
-            'email' => [
+            'faculty_id' => [
                 'required',
                 'string',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email'),
+                'max:20',
+                Rule::unique('users', 'faculty_id'),
             ],
 
             'employment_type' => [

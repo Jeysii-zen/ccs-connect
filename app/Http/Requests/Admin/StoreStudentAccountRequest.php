@@ -54,14 +54,6 @@ class StoreStudentAccountRequest extends FormRequest
                 'string',
                 'max:20',
             ],
-
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email'),
-            ],
         ];
     }
 }

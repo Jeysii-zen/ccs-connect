@@ -45,9 +45,9 @@ Route::middleware([
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
-        'student' => request()->user(),
+        'user' => request()->user(),
     ]);
-})->middleware(['auth', 'must.change.password', 'role:student'])->name('dashboard');
+})->middleware(['auth', 'must.change.password', 'role:student,faculty'])->name('dashboard');
 
 Route::middleware([
     'auth',
