@@ -62,6 +62,10 @@ Route::middleware([
 
     Route::post('/admin/accounts/faculty', [AccountManagementController::class, 'storeFaculty'])
         ->name('admin.accounts.faculty.store');
+    Route::put('/admin/accounts/students/{student}', [AccountManagementController::class, 'updateStudent'])
+        ->name('admin.accounts.students.update');
+    Route::put('/admin/accounts/faculty/{faculty}', [AccountManagementController::class, 'updateFaculty'])
+        ->name('admin.accounts.faculty.update');
 });
 
 Route::middleware(['auth', 'must.change.password'])->group(function () {

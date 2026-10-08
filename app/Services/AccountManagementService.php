@@ -4,9 +4,14 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class AccountManagementService
 {
+    public function __construct(
+        protected ActivityLogService $activityLogService
+    ) {}
+
     /**
      * @return LengthAwarePaginator<int, User>
      */
@@ -93,5 +98,59 @@ class AccountManagementService
             ->orderBy('first_name')
             ->paginate(20, ['*'], 'deactivated_page')
             ->withQueryString();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateStudent(
+        User $student,
+        array $data,
+        User $updatedBy
+    ): void {
+        DB::transaction(function () use ($student, $data, $updatedBy): void {
+            $student->update([
+                'first_name' => $data['first_name'],
+                'middle_name' => $data['middle_name'] ?? null,
+                'last_name' => $data['last_name'],
+                'student_number' => $data['student_number'],
+                'year_level' => $data['year_level'],
+                'block_number' => $data['block_number'],
+            ]);
+
+            $this->activityLogService->log(
+                $updatedBy,
+                'ACCOUNT_UPDATED',
+                'Account Management',
+                "Updated Student account for user ID {$student->id}."
+            );
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateFaculty(
+        User $faculty,
+        array $data,
+        User $updatedBy
+    ): void {
+        DB::transaction(function () use ($faculty, $data, $updatedBy): void {
+            $faculty->update([
+                'first_name' => $data['first_name'],
+                'middle_name' => $data['middle_name'] ?? null,
+                'last_name' => $data['last_name'],
+                'suffix' => $data['suffix'] ?? null,
+                'faculty_id' => $data['faculty_id'],
+                'employment_type' => $data['employment_type'],
+            ]);
+
+            $this->activityLogService->log(
+                $updatedBy,
+                'ACCOUNT_UPDATED',
+                'Account Management',
+                "Updated Faculty account for user ID {$faculty->id}."
+            );
+        });
     }
 }
