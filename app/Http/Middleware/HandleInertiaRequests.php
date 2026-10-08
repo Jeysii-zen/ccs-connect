@@ -34,6 +34,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'flash' => [
+                'account_creation' => $request->session()->get('account_creation'),
+            ],
         ];
     }
 }

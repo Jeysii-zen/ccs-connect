@@ -38,7 +38,6 @@ test('student account data passes validation when all required fields are valid'
         'student_number' => '24-01-001',
         'year_level' => '3rd Year',
         'block_number' => 'BSIT-31',
-        'email' => 'student@example.com',
     ], (new StoreStudentAccountRequest)->rules());
 
     expect($validator->passes())->toBeTrue();
@@ -52,8 +51,7 @@ test('student account validation requires the required fields', function () {
         ->and($validator->errors()->has('last_name'))->toBeTrue()
         ->and($validator->errors()->has('student_number'))->toBeTrue()
         ->and($validator->errors()->has('year_level'))->toBeTrue()
-        ->and($validator->errors()->has('block_number'))->toBeTrue()
-        ->and($validator->errors()->has('email'))->toBeTrue();
+        ->and($validator->errors()->has('block_number'))->toBeTrue();
 });
 
 test('student account validation rejects an invalid student number format', function () {
@@ -63,25 +61,10 @@ test('student account validation rejects an invalid student number format', func
         'student_number' => '2401001',
         'year_level' => '3rd Year',
         'block_number' => 'BSIT-31',
-        'email' => 'student@example.com',
     ], (new StoreStudentAccountRequest)->rules());
 
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->has('student_number'))->toBeTrue();
-});
-
-test('student account validation rejects an invalid email', function () {
-    $validator = Validator::make([
-        'first_name' => 'John',
-        'last_name' => 'Magtuba',
-        'student_number' => '24-01-001',
-        'year_level' => '3rd Year',
-        'block_number' => 'BSIT-31',
-        'email' => 'not-an-email',
-    ], (new StoreStudentAccountRequest)->rules());
-
-    expect($validator->fails())->toBeTrue()
-        ->and($validator->errors()->has('email'))->toBeTrue();
 });
 
 test('admin is authorized to create faculty accounts', function () {
@@ -112,7 +95,7 @@ test('faculty account data passes validation when all required fields are valid'
         'middle_name' => 'Cruz',
         'last_name' => 'Santos',
         'suffix' => 'Jr.',
-        'email' => 'faculty@example.com',
+        'faculty_id' => 'FAC-001',
         'employment_type' => 'Full-time',
     ], (new StoreFacultyAccountRequest)->rules());
 
@@ -125,30 +108,29 @@ test('faculty account validation requires the required fields', function () {
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->has('first_name'))->toBeTrue()
         ->and($validator->errors()->has('last_name'))->toBeTrue()
-        ->and($validator->errors()->has('email'))->toBeTrue()
+        ->and($validator->errors()->has('faculty_id'))->toBeTrue()
         ->and($validator->errors()->has('employment_type'))->toBeTrue();
+});
+
+test('faculty account validation rejects an invalid faculty ID when missing', function () {
+    $validator = Validator::make([
+        'first_name' => 'Maria',
+        'last_name' => 'Santos',
+        'employment_type' => 'Full-time',
+    ], (new StoreFacultyAccountRequest)->rules());
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('faculty_id'))->toBeTrue();
 });
 
 test('faculty account validation rejects an invalid employment type', function () {
     $validator = Validator::make([
         'first_name' => 'Maria',
         'last_name' => 'Santos',
-        'email' => 'faculty@example.com',
+        'faculty_id' => 'FAC-002',
         'employment_type' => 'Contractual',
     ], (new StoreFacultyAccountRequest)->rules());
 
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->has('employment_type'))->toBeTrue();
-});
-
-test('faculty account validation rejects an invalid email', function () {
-    $validator = Validator::make([
-        'first_name' => 'Maria',
-        'last_name' => 'Santos',
-        'email' => 'not-an-email',
-        'employment_type' => 'Full-time',
-    ], (new StoreFacultyAccountRequest)->rules());
-
-    expect($validator->fails())->toBeTrue()
-        ->and($validator->errors()->has('email'))->toBeTrue();
 });

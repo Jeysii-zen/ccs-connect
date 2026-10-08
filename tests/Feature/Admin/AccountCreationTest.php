@@ -19,12 +19,11 @@ test('admin can create a student account', function () {
         'middle_name' => 'Chris',
         'last_name' => 'Magtuba',
         'student_number' => '24-01-001',
-        'email' => 'student@example.com',
         'year_level' => '3rd Year',
         'block_number' => 'BSIT-31',
     ], $admin);
 
-    $student = User::where('email', 'student@example.com')->first();
+    $student = User::where('student_number', '24-01-001')->first();
 
     expect($student)->not->toBeNull()
         ->and($student->role)->toBe('student')
@@ -34,10 +33,10 @@ test('admin can create a student account', function () {
         ->and($student->student_number)->toBe('24-01-001')
         ->and($student->year_level)->toBe('3rd Year')
         ->and($student->block_number)->toBe('BSIT-31')
+        ->and($student->email)->toBeNull()
         ->and($student->account_status)->toBe('ACTIVE')
         ->and($student->must_change_password)->toBeTrue()
-        ->and($temporaryPassword)->toBeString()
-        ->and($temporaryPassword)->not->toBeEmpty();
+        ->and($temporaryPassword)->toBe('CCSStudent@2026');
 
     expect(Hash::check($temporaryPassword, $student->password))->toBeTrue();
 
@@ -56,22 +55,23 @@ test('admin can create a faculty account', function () {
         'middle_name' => null,
         'last_name' => 'Santos',
         'suffix' => 'Jr.',
-        'email' => 'faculty@example.com',
+        'faculty_id' => 'FAC-001',
         'employment_type' => 'Full-time',
     ], $admin);
 
-    $faculty = User::where('email', 'faculty@example.com')->first();
+    $faculty = User::where('faculty_id', 'FAC-001')->first();
 
     expect($faculty)->not->toBeNull()
         ->and($faculty->role)->toBe('faculty')
         ->and($faculty->first_name)->toBe('Maria')
         ->and($faculty->last_name)->toBe('Santos')
         ->and($faculty->suffix)->toBe('Jr.')
+        ->and($faculty->faculty_id)->toBe('FAC-001')
         ->and($faculty->employment_type)->toBe('Full-time')
+        ->and($faculty->email)->toBeNull()
         ->and($faculty->account_status)->toBe('ACTIVE')
         ->and($faculty->must_change_password)->toBeTrue()
-        ->and($temporaryPassword)->toBeString()
-        ->and($temporaryPassword)->not->toBeEmpty();
+        ->and($temporaryPassword)->toBe('CCSFaculty@2026');
 
     expect(Hash::check($temporaryPassword, $faculty->password))->toBeTrue();
 
@@ -89,12 +89,11 @@ test('student account creation records an activity log', function () {
         'first_name' => 'John',
         'last_name' => 'Doe',
         'student_number' => '24-01-002',
-        'email' => 'student2@example.com',
         'year_level' => '2nd Year',
         'block_number' => 'BSIT-21',
     ], $admin);
 
-    $student = User::where('email', 'student2@example.com')->first();
+    $student = User::where('student_number', '24-01-002')->first();
 
     expect($student)->not->toBeNull();
 
@@ -115,11 +114,11 @@ test('faculty account creation records an activity log', function () {
     $service->createFaculty([
         'first_name' => 'Ana',
         'last_name' => 'Reyes',
-        'email' => 'faculty2@example.com',
+        'faculty_id' => 'FAC-002',
         'employment_type' => 'Part-time',
     ], $admin);
 
-    $faculty = User::where('email', 'faculty2@example.com')->first();
+    $faculty = User::where('faculty_id', 'FAC-002')->first();
 
     expect($faculty)->not->toBeNull();
 

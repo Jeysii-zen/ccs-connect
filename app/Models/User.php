@@ -6,7 +6,15 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon|null $login_cooldown_until
+ * @property-read Carbon|null $last_login_at
+ * @property-read Carbon|null $last_seen_at
+ * @property-read Carbon|null $deactivated_at
+ * @property-read Carbon|null $anonymized_at
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -23,6 +31,7 @@ class User extends Authenticatable
         'last_name',
         'suffix',
         'student_number',
+        'faculty_id',
         'email',
         'password',
         'profile_picture_path',
@@ -56,8 +65,16 @@ class User extends Authenticatable
             'must_change_password' => 'boolean',
             'failed_login_attempts' => 'integer',
             'login_cooldown_until' => 'datetime',
+            'last_login_at' => 'datetime',
+            'last_seen_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'anonymized_at' => 'datetime',
         ];
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at !== null
+            && $this->last_seen_at->greaterThanOrEqualTo(now()->subMinutes(5));
     }
 }

@@ -5,6 +5,7 @@ import {
     ChevronDown,
     ChevronRight,
     Clock,
+    GraduationCap,
     LayoutDashboard,
     List,
     LogOut,
@@ -18,6 +19,7 @@ import {
     ShieldCheck,
     UserPlus,
     Users,
+    UserX,
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -61,9 +63,9 @@ const navigationItems = [
         match: '/admin/accounts',
         icon: Users,
         actions: [
-            { label: 'All Accounts', icon: List, href: route('admin.accounts.index') },
-            { label: 'Pending Accounts', icon: Clock, href: route('admin.accounts.index', { status: 'pending' }) },
-            { label: 'Create Account', icon: UserPlus, href: route('admin.accounts.index', { create: 1 }) },
+            { label: 'Student Account', icon: GraduationCap, href: route('admin.accounts.index', { section: 'student' }) },
+            { label: 'Faculty Account', icon: Users, href: route('admin.accounts.index', { section: 'faculty' }) },
+            { label: 'Deactivated Account', icon: UserX, href: route('admin.accounts.index', { section: 'deactivated' }) },
         ],
     },
     {
@@ -101,6 +103,56 @@ const persisted = {
 // Sections that have a real page. Add a label here once its page is built.
 const readyLabels = ['Account'];
 const isReady = (item) => readyLabels.includes(item.label);
+function AdminPageSkeleton() {
+    return (
+        <div
+            className="min-h-[calc(100vh-8rem)] animate-pulse"
+            aria-label="Loading content"
+            role="status"
+        >
+            <div className="mb-6 h-8 w-56 rounded-lg bg-slate-200" />
+
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                        key={index}
+                        className="h-24 rounded-2xl border border-slate-200 bg-white p-5"
+                    >
+                        <div className="h-3 w-20 rounded bg-slate-200" />
+                        <div className="mt-4 h-6 w-28 rounded bg-slate-200" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="border-b border-slate-200 px-6 py-5">
+                    <div className="h-5 w-40 rounded bg-slate-200" />
+                    <div className="mt-2 h-3 w-64 rounded bg-slate-100" />
+                </div>
+
+                <div className="space-y-0">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="flex items-center gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
+                        >
+                            <div className="h-10 w-10 rounded-xl bg-slate-200" />
+                            <div className="flex-1">
+                                <div className="h-4 w-40 rounded bg-slate-200" />
+                                <div className="mt-2 h-3 w-24 rounded bg-slate-100" />
+                            </div>
+                            <div className="hidden h-4 w-24 rounded bg-slate-100 sm:block" />
+                            <div className="hidden h-4 w-20 rounded bg-slate-100 md:block" />
+                            <div className="h-8 w-20 rounded-lg bg-slate-100" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <span className="sr-only">Loading page content...</span>
+        </div>
+    );
+}
 
 // Labels only fit on wide screens; below this the bar auto-shrinks to icons.
 const WIDE_QUERY = '(min-width: 1440px)';
@@ -558,13 +610,13 @@ export default function AdminConnectLayout({ children }) {
             {/* ===== Page Content ===== */}
             <div className="min-h-screen min-w-0 px-4 pb-8 pt-24 sm:px-6 lg:ml-64 lg:px-8">
                 <main
-    key={activeItem.label}
-    aria-busy={loading}
-    className={`${sectionChanged ? 'ac-content-in' : ''} transition-opacity duration-300 ${
-        loading ? 'opacity-60' : 'opacity-100'
-    }`}
->
-                    {isReady(activeItem) ? (
+                    key={activeItem.label}
+                    aria-busy={loading}
+                    className={`${sectionChanged ? 'ac-content-in' : ''} transition-opacity duration-300`}
+                >
+                    {loading ? (
+                        <AdminPageSkeleton />
+                    ) : isReady(activeItem) ? (
                         children
                     ) : (
                         <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center p-6">
@@ -575,7 +627,7 @@ export default function AdminConnectLayout({ children }) {
 
                                 <span className="mt-5 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                                     <span className="mr-1.5 h-1.5 w-1.5 shrink-0 animate-pulse self-center rounded-full bg-amber-500" />
-Under Development
+                                    Under Development
                                 </span>
 
                                 <h2 className="mt-3 text-xl font-bold text-slate-900">
