@@ -103,49 +103,174 @@ const persisted = {
 // Sections that have a real page. Add a label here once its page is built.
 const readyLabels = ['Account'];
 const isReady = (item) => readyLabels.includes(item.label);
-function AdminPageSkeleton() {
+const skeletonSections = ['student', 'faculty', 'deactivated'];
+
+// Mirrors the real Account tables (same column widths and cell shapes).
+const skeletonColumns = {
+    student: [
+        { w: '22%', kind: 'name' },
+        { w: '12%', kind: 'id' },
+        { w: '10%', kind: 'text' },
+        { w: '9%', kind: 'text' },
+        { w: '9%', kind: 'badge' },
+        { w: '11%', kind: 'status' },
+        { w: '15%', kind: 'date' },
+        { w: '12%', kind: 'actions' },
+    ],
+    faculty: [
+        { w: '23%', kind: 'name' },
+        { w: '13%', kind: 'id' },
+        { w: '13%', kind: 'badge' },
+        { w: '11%', kind: 'badge' },
+        { w: '12%', kind: 'status' },
+        { w: '16%', kind: 'date' },
+        { w: '12%', kind: 'actions' },
+    ],
+    deactivated: [
+        { w: '28%', kind: 'name' },
+        { w: '14%', kind: 'id' },
+        { w: '14%', kind: 'badge' },
+        { w: '26%', kind: 'date' },
+        { w: '18%', kind: 'button' },
+    ],
+};
+
+const skeletonMinWidth = {
+    student: '1100px',
+    faculty: '1000px',
+    deactivated: '900px',
+};
+
+const skeletonFilters = {
+    student: [
+        'w-full sm:w-64',
+        'min-w-[9rem] flex-1 sm:w-40 sm:flex-none',
+        'min-w-[7rem] flex-1 sm:w-28 sm:flex-none',
+    ],
+    faculty: ['w-full sm:w-64', 'min-w-[9rem] flex-1 sm:w-52 sm:flex-none'],
+    deactivated: ['min-w-[9rem] flex-1 sm:w-36 sm:flex-none', 'w-full sm:w-64'],
+};
+
+function SkeletonCell({ kind }) {
+    switch (kind) {
+        case 'name':
+            return <div className="h-4 w-4/5 rounded bg-slate-200" />;
+        case 'id':
+            return <div className="h-6 w-16 rounded-md bg-slate-100" />;
+        case 'text':
+            return <div className="h-4 w-12 rounded bg-slate-100" />;
+        case 'badge':
+            return <div className="h-6 w-16 rounded-full bg-slate-100" />;
+        case 'status':
+            return <div className="h-6 w-20 rounded-full bg-slate-100" />;
+        case 'date':
+            return <div className="h-4 w-24 rounded bg-slate-100" />;
+        case 'actions':
+            return (
+                <div className="flex justify-end gap-2">
+                    <div className="h-9 w-9 rounded-xl bg-slate-100" />
+                    <div className="h-9 w-9 rounded-xl bg-slate-100" />
+                </div>
+            );
+        case 'button':
+            return <div className="ml-auto h-9 w-28 rounded-xl bg-slate-100" />;
+        default:
+            return null;
+    }
+}
+
+function AdminPageSkeleton({ href }) {
+    const requested = new URL(
+        href ?? '/',
+        window.location.origin,
+    ).searchParams.get('section');
+    const section = skeletonSections.includes(requested)
+        ? requested
+        : 'student';
+
+    const columns = skeletonColumns[section];
+    const template = columns.map((column) => column.w).join(' ');
+    const isRight = (kind) => kind === 'actions' || kind === 'button';
+
     return (
         <div
-            className="min-h-[calc(100vh-8rem)] animate-pulse"
+            className="animate-pulse"
             aria-label="Loading content"
             role="status"
         >
-            <div className="mb-6 h-8 w-56 rounded-lg bg-slate-200" />
-
-            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                        key={index}
-                        className="h-24 rounded-2xl border border-slate-200 bg-white p-5"
-                    >
-                        <div className="h-3 w-20 rounded bg-slate-200" />
-                        <div className="mt-4 h-6 w-28 rounded bg-slate-200" />
+            <div className="mx-auto max-w-7xl pb-2 pt-5 sm:pt-7">
+                {/* Page header + Add Account button */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                        <div className="h-9 w-72 max-w-full rounded-lg bg-slate-200 sm:h-10" />
+                        <div className="mt-2 max-w-2xl">
+                            <div className="flex h-6 items-center">
+                                <div className="h-3.5 w-full rounded bg-slate-100" />
+                            </div>
+                            <div className="flex h-6 items-center">
+                                <div className="h-3.5 w-2/3 rounded bg-slate-100" />
+                            </div>
+                        </div>
                     </div>
-                ))}
-            </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <div className="border-b border-slate-200 px-6 py-5">
-                    <div className="h-5 w-40 rounded bg-slate-200" />
-                    <div className="mt-2 h-3 w-64 rounded bg-slate-100" />
+                    {section !== 'deactivated' && (
+                        <div className="h-10 w-full shrink-0 rounded-xl bg-slate-200 sm:w-36" />
+                    )}
                 </div>
 
-                <div className="space-y-0">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="flex items-center gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0"
-                        >
-                            <div className="h-10 w-10 rounded-xl bg-slate-200" />
-                            <div className="flex-1">
-                                <div className="h-4 w-40 rounded bg-slate-200" />
-                                <div className="mt-2 h-3 w-24 rounded bg-slate-100" />
-                            </div>
-                            <div className="hidden h-4 w-24 rounded bg-slate-100 sm:block" />
-                            <div className="hidden h-4 w-20 rounded bg-slate-100 md:block" />
-                            <div className="h-8 w-20 rounded-lg bg-slate-100" />
+                {/* Table card (no bottom margin, same as the real card) */}
+                <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_10px_40px_-18px_rgba(15,23,42,0.18)]">
+
+                    <div className="flex flex-col gap-3 border-b border-slate-100 px-4 pb-4 pt-5 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 shrink-0 rounded-xl bg-slate-200" />
+                            <div className="h-6 w-24 rounded-full bg-slate-100" />
                         </div>
-                    ))}
+
+                        <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:flex-nowrap">
+                            {skeletonFilters[section].map((classes, index) => (
+                                <div
+                                    key={index}
+                                    className={`h-10 rounded-xl bg-slate-100 ${classes}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="h-[22.75rem] overflow-hidden">
+                        <div style={{ minWidth: skeletonMinWidth[section] }}>
+                            <div
+                                className="grid h-11 items-center bg-slate-50 shadow-[inset_0_-1px_0_#f1f5f9]"
+                                style={{ gridTemplateColumns: template }}
+                            >
+                                {columns.map((column, index) => (
+                                    <div key={index} className="px-5">
+                                        <div
+                                            className={`h-2.5 w-16 rounded bg-slate-200 ${
+                                                isRight(column.kind)
+                                                    ? 'ml-auto'
+                                                    : ''
+                                            }`}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {Array.from({ length: 5 }).map((_, row) => (
+                                <div
+                                    key={row}
+                                    className="grid h-16 items-center border-b border-slate-100/80"
+                                    style={{ gridTemplateColumns: template }}
+                                >
+                                    {columns.map((column, index) => (
+                                        <div key={index} className="px-5">
+                                            <SkeletonCell kind={column.kind} />
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -188,7 +313,16 @@ export default function AdminConnectLayout({ children }) {
 
     // Track page loads so the UI can react instantly while content loads.
     useEffect(() => {
-        const offStart = router.on('start', () => setLoading(true));
+        const offStart = router.on('start', (event) => {
+            const visit = event.detail.visit;
+
+            // Filters, pagination and tab switches keep the page mounted.
+            if (visit.preserveState || visit.only?.length > 0) {
+                return;
+            }
+
+            setLoading(true);
+        });
         const offFinish = router.on('finish', () => {
             setLoading(false);
             setPendingHref(null);
@@ -234,6 +368,38 @@ export default function AdminConnectLayout({ children }) {
 
     useEffect(() => {
         persisted.entered = true;
+
+        // Runs once per browser document load, never on in-app navigation.
+        if (persisted.reloadHandled) {
+            return;
+        }
+        persisted.reloadHandled = true;
+
+        const navigation = performance.getEntriesByType('navigation')[0];
+
+        if (navigation?.type !== 'reload') {
+            return;
+        }
+
+        const url = new URL(currentUrl, window.location.origin);
+        const accountsPath = new URL(
+            route('admin.accounts.index'),
+            window.location.origin,
+        ).pathname;
+
+        // Hard reload on the Account page with any tab/filter/page in the URL:
+        // go back to the default Student tab.
+        if (
+            url.pathname === accountsPath &&
+            url.search !== '' &&
+            url.search !== '?section=student'
+        ) {
+            router.get(
+                route('admin.accounts.index', { section: 'student' }),
+                {},
+                { replace: true, preserveState: true, preserveScroll: true },
+            );
+        }
     }, []);
 
     useEffect(() => {
@@ -245,25 +411,54 @@ export default function AdminConnectLayout({ children }) {
     }, [manualShrunk]);
 
     const stripOrigin = (href) => href.replace(/^https?:\/\/[^/]+/, '');
-    const isActionActive = (href) =>
-        (pendingHref ?? currentUrl) === stripOrigin(href);
+
+    const isActionActive = (href) => {
+        const current = new URL(pendingHref ?? currentUrl, window.location.origin);
+        const target = new URL(stripOrigin(href), window.location.origin);
+
+        if (current.pathname !== target.pathname) {
+            return false;
+        }
+
+        // Account page: match on ?section= only, defaulting to "student".
+        // Search, filter and pagination params no longer affect the highlight.
+        if (activeItem.label === 'Account') {
+            const currentSection = current.searchParams.get('section') ?? 'student';
+            const targetSection = target.searchParams.get('section') ?? 'student';
+
+            return currentSection === targetSection;
+        }
+
+        return current.search === target.search;
+    };
 
     const actions = isReady(activeItem) ? activeItem.actions : [];
     const activeIndex = actions.findIndex((a) => isActionActive(a.href));
 
-    // Starts at the previously active action, then glides to the new one.
-    const [indicatorIndex, setIndicatorIndex] = useState(() =>
-        persisted.actionSection === activeItem.label && persisted.actionIndex >= 0
-            ? persisted.actionIndex
-            : activeIndex,
-    );
+    const [indicator, setIndicator] = useState(() => ({
+        section: activeItem.label,
+        index:
+            persisted.actionSection === activeItem.label &&
+            persisted.actionIndex >= 0
+                ? persisted.actionIndex
+                : activeIndex,
+    }));
 
     useEffect(() => {
-        const id = setTimeout(() => setIndicatorIndex(activeIndex), 30);
+        const id = setTimeout(
+            () =>
+                setIndicator({ section: activeItem.label, index: activeIndex }),
+            30,
+        );
         persisted.actionIndex = activeIndex;
         persisted.actionSection = activeItem.label;
         return () => clearTimeout(id);
     }, [activeIndex, activeItem.label]);
+
+    // Section changed: snap to the target row instead of gliding from the
+    // previous section's row.
+    const indicatorIndex =
+        indicator.section === activeItem.label ? indicator.index : activeIndex;
 
     const sidebarContent = (
         <div className="relative flex h-[calc(100%-5rem)] flex-col overflow-y-auto px-4 py-5">
@@ -401,7 +596,7 @@ export default function AdminConnectLayout({ children }) {
                 @supports not (scrollbar-gutter:stable){html{overflow-y:scroll}}
                 @keyframes acNavIn{from{opacity:0;top:-3.5rem}to{opacity:1;top:1rem}}
                 @keyframes acSideIn{from{opacity:0;left:-16rem}to{opacity:1;left:0}}
-                @keyframes acFadeUp{from{opacity:0;transform:translateY(18px) scale(.985);filter:blur(8px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+                @keyframes acFadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
                 @keyframes acSlideRight{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
                 @keyframes acPop{from{opacity:0;transform:scale(.95) translateY(-6px)}to{opacity:1;transform:scale(1) translateY(0)}}
                 @keyframes acFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -422,12 +617,20 @@ export default function AdminConnectLayout({ children }) {
             {/* Soft animated background glow */}
             <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
                 <div
-                    style={{ animationDelay: `-${bgElapsed}s` }}
-                    className="ac-blob absolute -left-24 top-1/3 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl"
+                    style={{
+                        animationDelay: `-${bgElapsed}s`,
+                        background:
+                            'radial-gradient(circle, rgba(96,165,250,.28) 0%, transparent 70%)',
+                    }}
+                    className="ac-blob absolute -left-40 top-1/4 h-[32rem] w-[32rem] rounded-full"
                 />
                 <div
-                    style={{ animationDelay: `-${bgElapsed + 7}s` }}
-                    className="ac-blob absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-cyan-300/20 blur-3xl"
+                    style={{
+                        animationDelay: `-${bgElapsed + 7}s`,
+                        background:
+                            'radial-gradient(circle, rgba(103,232,249,.28) 0%, transparent 70%)',
+                    }}
+                    className="ac-blob absolute -right-40 bottom-0 h-[36rem] w-[36rem] rounded-full"
                 />
             </div>
             {/* ===== Shrinkable Navigation Bar ===== */}
@@ -450,7 +653,11 @@ export default function AdminConnectLayout({ children }) {
                                 setSelectedLabel(item.label);
                                 if (!isReady(item)) {
                                     e.preventDefault();
+                                    return;
                                 }
+                                // Highlight the destination right away,
+                                // not the page we're leaving.
+                                setPendingHref(stripOrigin(item.href));
                             }}
                             title={navShrunk ? item.label : undefined}
                             className={`group flex shrink-0 items-center rounded-xl transition-all duration-300 ease-in-out hover:-translate-y-0.5 active:scale-95 ${
@@ -615,7 +822,7 @@ export default function AdminConnectLayout({ children }) {
                     className={`${sectionChanged ? 'ac-content-in' : ''} transition-opacity duration-300`}
                 >
                     {loading ? (
-                        <AdminPageSkeleton />
+                        <AdminPageSkeleton href={pendingHref ?? currentUrl} />
                     ) : isReady(activeItem) ? (
                         children
                     ) : (

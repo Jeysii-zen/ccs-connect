@@ -174,4 +174,46 @@ class AccountManagementService
             );
         });
     }
+
+    /**
+     * Deactivate a faculty account.
+     */
+    public function deactivateFaculty(User $faculty, User $deactivatedBy): void
+    {
+        DB::transaction(function () use ($faculty, $deactivatedBy): void {
+            $faculty->update([
+                'account_status' => 'DEACTIVATED',
+                'deactivated_at' => now(),
+                'last_seen_at' => null,
+            ]);
+
+            $this->activityLogService->log(
+                $deactivatedBy,
+                'ACCOUNT_DEACTIVATED',
+                'Account Management',
+                "Deactivated Faculty account for user ID {$faculty->id}."
+            );
+        });
+    }
+
+    /**
+     * Reactivate a deactivated account.
+     */
+    public function reactivate(User $user, User $reactivatedBy): void
+    {
+        DB::transaction(function () use ($user, $reactivatedBy): void {
+            $user->update([
+                'account_status' => 'ACTIVE',
+                'deactivated_at' => null,
+                'last_seen_at' => null,
+            ]);
+
+            $this->activityLogService->log(
+                $reactivatedBy,
+                'ACCOUNT_REACTIVATED',
+                'Account Management',
+                "Reactivated {$user->role} account for user ID {$user->id}."
+            );
+        });
+    }
 }

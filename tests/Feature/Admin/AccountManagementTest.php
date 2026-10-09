@@ -511,3 +511,212 @@ test('admins cannot deactivate an already deactivated student account', function
 
     $response->assertNotFound();
 });
+
+it('admins can deactivate a faculty account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $faculty = User::factory()->create([
+        'role' => 'faculty',
+        'account_status' => 'ACTIVE',
+        'faculty_id' => 'FAC-0001',
+        'last_seen_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)->patch(
+        route('admin.accounts.faculty.deactivate', $faculty)
+    );
+
+    $response->assertRedirect(route('admin.accounts.index', [
+        'section' => 'faculty',
+    ]));
+
+    $faculty->refresh();
+
+    expect($faculty->account_status)->toBe('DEACTIVATED');
+    expect($faculty->deactivated_at)->not->toBeNull();
+    expect($faculty->last_seen_at)->toBeNull();
+
+    $this->assertDatabaseHas('activity_logs', [
+        'user_id' => $admin->id,
+        'action' => 'ACCOUNT_DEACTIVATED',
+        'module' => 'Account Management',
+    ]);
+});
+
+it('non-admin users cannot deactivate faculty accounts', function () {
+    $facultyUser = User::factory()->create([
+        'role' => 'faculty',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $faculty = User::factory()->create([
+        'role' => 'faculty',
+        'account_status' => 'ACTIVE',
+        'faculty_id' => 'FAC-0002',
+    ]);
+
+    $response = $this->actingAs($facultyUser)->patch(
+        route('admin.accounts.faculty.deactivate', $faculty)
+    );
+
+    $response->assertForbidden();
+
+    expect($faculty->refresh()->account_status)->toBe('ACTIVE');
+});
+
+it('admins cannot deactivate an already deactivated faculty account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $faculty = User::factory()->create([
+        'role' => 'faculty',
+        'account_status' => 'DEACTIVATED',
+        'faculty_id' => 'FAC-0003',
+        'deactivated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)->patch(
+        route('admin.accounts.faculty.deactivate', $faculty)
+    );
+
+    $response->assertNotFound();
+});
+
+it('admins can reactivate a student account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $student = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'DEACTIVATED',
+        'student_number' => '24-02-100',
+        'deactivated_at' => now(),
+        'last_seen_at' => null,
+    ]);
+
+    $response = $this->actingAs($admin)->patch(
+        route('admin.accounts.reactivate', $student)
+    );
+
+    $response->assertRedirect(route('admin.accounts.index', [
+        'section' => 'deactivated',
+    ]));
+
+    $student->refresh();
+
+    expect($student->account_status)->toBe('ACTIVE')
+        ->and($student->deactivated_at)->toBeNull()
+        ->and($student->last_seen_at)->toBeNull();
+
+    $this->assertDatabaseHas('activity_logs', [
+        'user_id' => $admin->id,
+        'action' => 'ACCOUNT_REACTIVATED',
+        'module' => 'Account Management',
+    ]);
+});
+
+it('admins can reactivate a faculty account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $faculty = User::factory()->create([
+        'role' => 'faculty',
+        'account_status' => 'DEACTIVATED',
+        'faculty_id' => 'FAC-0004',
+        'deactivated_at' => now(),
+        'last_seen_at' => null,
+    ]);
+
+    $response = $this->actingAs($admin)->patch(
+        route('admin.accounts.reactivate', $faculty)
+    );
+
+    $response->assertRedirect(route('admin.accounts.index', [
+        'section' => 'deactivated',
+    ]));
+
+    $faculty->refresh();
+
+    expect($faculty->account_status)->toBe('ACTIVE')
+        ->and($faculty->deactivated_at)->toBeNull()
+        ->and($faculty->last_seen_at)->toBeNull();
+
+    $this->assertDatabaseHas('activity_logs', [
+        'user_id' => $admin->id,
+        'action' => 'ACCOUNT_REACTIVATED',
+        'module' => 'Account Management',
+    ]);
+});
+
+it('non-admin users cannot reactivate accounts', function () {
+    $studentUser = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $target = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'DEACTIVATED',
+        'student_number' => '24-02-101',
+        'deactivated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($studentUser)->patch(
+        route('admin.accounts.reactivate', $target)
+    );
+
+    $response->assertForbidden();
+
+    expect($target->refresh()->account_status)->toBe('DEACTIVATED');
+});
+
+it('admins cannot reactivate an already active account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $student = User::factory()->create([
+        'role' => 'student',
+        'account_status' => 'ACTIVE',
+        'student_number' => '24-02-102',
+    ]);
+
+    $response = $this->actingAs($admin)->patch(
+        route('admin.accounts.reactivate', $student)
+    );
+
+    $response->assertNotFound();
+
+    expect($student->refresh()->account_status)->toBe('ACTIVE');
+});
+
+it('admins cannot reactivate an admin account', function () {
+    $admin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'DEACTIVATED',
+        'deactivated_at' => now(),
+    ]);
+
+    $actingAdmin = User::factory()->create([
+        'role' => 'admin',
+        'account_status' => 'ACTIVE',
+    ]);
+
+    $response = $this->actingAs($actingAdmin)->patch(
+        route('admin.accounts.reactivate', $admin)
+    );
+
+    $response->assertNotFound();
+
+    expect($admin->refresh()->account_status)->toBe('DEACTIVATED');
+});
