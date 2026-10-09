@@ -4,9 +4,14 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class AccountManagementService
 {
+    public function __construct(
+        protected ActivityLogService $activityLogService
+    ) {}
+
     /**
      * @return LengthAwarePaginator<int, User>
      */
@@ -93,5 +98,122 @@ class AccountManagementService
             ->orderBy('first_name')
             ->paginate(20, ['*'], 'deactivated_page')
             ->withQueryString();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateStudent(
+        User $student,
+        array $data,
+        User $updatedBy
+    ): void {
+        DB::transaction(function () use ($student, $data, $updatedBy): void {
+            $student->update([
+                'first_name' => $data['first_name'],
+                'middle_name' => $data['middle_name'] ?? null,
+                'last_name' => $data['last_name'],
+                'student_number' => $data['student_number'],
+                'year_level' => $data['year_level'],
+                'block_number' => $data['block_number'],
+            ]);
+
+            $this->activityLogService->log(
+                $updatedBy,
+                'ACCOUNT_UPDATED',
+                'Account Management',
+                "Updated Student account for user ID {$student->id}."
+            );
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateFaculty(
+        User $faculty,
+        array $data,
+        User $updatedBy
+    ): void {
+        DB::transaction(function () use ($faculty, $data, $updatedBy): void {
+            $faculty->update([
+                'first_name' => $data['first_name'],
+                'middle_name' => $data['middle_name'] ?? null,
+                'last_name' => $data['last_name'],
+                'suffix' => $data['suffix'] ?? null,
+                'faculty_id' => $data['faculty_id'],
+                'employment_type' => $data['employment_type'],
+            ]);
+
+            $this->activityLogService->log(
+                $updatedBy,
+                'ACCOUNT_UPDATED',
+                'Account Management',
+                "Updated Faculty account for user ID {$faculty->id}."
+            );
+        });
+    }
+
+    /**
+     * Deactivate a student account.
+     */
+    public function deactivateStudent(User $student, User $deactivatedBy): void
+    {
+        DB::transaction(function () use ($student, $deactivatedBy): void {
+            $student->update([
+                'account_status' => 'DEACTIVATED',
+                'deactivated_at' => now(),
+                'last_seen_at' => null,
+            ]);
+
+            $this->activityLogService->log(
+                $deactivatedBy,
+                'ACCOUNT_DEACTIVATED',
+                'Account Management',
+                "Deactivated Student account for user ID {$student->id}."
+            );
+        });
+    }
+
+    /**
+     * Deactivate a faculty account.
+     */
+    public function deactivateFaculty(User $faculty, User $deactivatedBy): void
+    {
+        DB::transaction(function () use ($faculty, $deactivatedBy): void {
+            $faculty->update([
+                'account_status' => 'DEACTIVATED',
+                'deactivated_at' => now(),
+                'last_seen_at' => null,
+            ]);
+
+            $this->activityLogService->log(
+                $deactivatedBy,
+                'ACCOUNT_DEACTIVATED',
+                'Account Management',
+                "Deactivated Faculty account for user ID {$faculty->id}."
+            );
+        });
+    }
+
+    /**
+     * Reactivate a deactivated account.
+     */
+    public function reactivate(User $user, User $reactivatedBy): void
+    {
+        DB::transaction(function () use ($user, $reactivatedBy): void {
+            $user->update([
+                'account_status' => 'ACTIVE',
+                'deactivated_at' => null,
+                'last_seen_at' => null,
+            ]);
+
+            $this->activityLogService->log(
+                $reactivatedBy,
+                'ACCOUNT_REACTIVATED',
+                'Account Management',
+                "Reactivated {$user->role} account for user ID {$user->id}."
+            );
+        });
     }
 }

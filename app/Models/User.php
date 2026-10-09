@@ -41,6 +41,8 @@ class User extends Authenticatable
         'employment_type',
         'account_status',
         'must_change_password',
+        'last_seen_at',
+        'deactivated_at',
     ];
 
     /**

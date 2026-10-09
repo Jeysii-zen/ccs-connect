@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreFacultyAccountRequest;
 use App\Http\Requests\Admin\StoreStudentAccountRequest;
+use App\Http\Requests\Admin\UpdateFacultyAccountRequest;
+use App\Http\Requests\Admin\UpdateStudentAccountRequest;
+use App\Models\User;
 use App\Services\AccountCreationService;
 use App\Services\AccountManagementService;
 use Illuminate\Http\RedirectResponse;
@@ -74,6 +77,119 @@ class AccountManagementController extends Controller
                 'type' => 'faculty',
                 'temporary_password' => $temporaryPassword,
             ]
+        );
+    }
+
+    public function updateStudent(
+        UpdateStudentAccountRequest $request,
+        User $student,
+        AccountManagementService $accountManagementService
+    ): RedirectResponse {
+        abort_unless(
+            $student->role === 'student'
+                && $student->account_status === 'ACTIVE',
+            404
+        );
+
+        $accountManagementService->updateStudent(
+            $student,
+            $request->validated(),
+            $request->user()
+        );
+
+        return to_route('admin.accounts.index', [
+            'section' => 'student',
+        ])->with('account_updated', 'Student account updated successfully.');
+    }
+
+    public function updateFaculty(
+        UpdateFacultyAccountRequest $request,
+        User $faculty,
+        AccountManagementService $accountManagementService
+    ): RedirectResponse {
+        abort_unless(
+            $faculty->role === 'faculty'
+                && $faculty->account_status === 'ACTIVE',
+            404
+        );
+
+        $accountManagementService->updateFaculty(
+            $faculty,
+            $request->validated(),
+            $request->user()
+        );
+
+        return to_route('admin.accounts.index', [
+            'section' => 'faculty',
+        ])->with('account_updated', 'Faculty account updated successfully.');
+    }
+
+    public function deactivateStudent(
+        User $student,
+        AccountManagementService $accountManagementService
+    ): RedirectResponse {
+        abort_unless(
+            $student->role === 'student'
+                && $student->account_status === 'ACTIVE',
+            404
+        );
+
+        $accountManagementService->deactivateStudent(
+            $student,
+            request()->user()
+        );
+
+        return to_route('admin.accounts.index', [
+            'section' => 'student',
+        ])->with(
+            'account_deactivated',
+            'Student account deactivated successfully.'
+        );
+    }
+
+    public function deactivateFaculty(
+        User $faculty,
+        AccountManagementService $accountManagementService
+    ): RedirectResponse {
+        abort_unless(
+            $faculty->role === 'faculty'
+                && $faculty->account_status === 'ACTIVE',
+            404
+        );
+
+        $accountManagementService->deactivateFaculty(
+            $faculty,
+            request()->user()
+        );
+
+        return to_route('admin.accounts.index', [
+            'section' => 'faculty',
+        ])->with(
+            'account_deactivated',
+            'Faculty account deactivated successfully.'
+        );
+    }
+
+    public function reactivate(
+        User $user,
+        AccountManagementService $accountManagementService
+    ): RedirectResponse {
+        abort_unless(
+            in_array($user->role, ['student', 'faculty'], true)
+                && $user->account_status === 'DEACTIVATED',
+            404
+        );
+
+        $accountManagementService->reactivate(
+            $user,
+            request()->user()
+        );
+
+        return to_route('admin.accounts.index', [
+            'section' => 'deactivated',
+        ])->with(
+            'account_reactivated',
+            'Account reactivated successfully.'
         );
     }
 }

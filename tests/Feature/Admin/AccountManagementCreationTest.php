@@ -20,7 +20,8 @@ test('admin can create a student account through the account management endpoint
         'block_number' => 'BSIT-31',
     ]);
 
-    $response->assertRedirect(route('admin.accounts.index'));
+    $response
+        ->assertRedirect(route('admin.accounts.index'));
 
     $response->assertSessionHas('account_creation.type', 'student');
     $response->assertSessionHas(
@@ -67,7 +68,8 @@ test('admin can create a faculty account through the account management endpoint
         'employment_type' => 'Full-time',
     ]);
 
-    $response->assertRedirect(route('admin.accounts.index'));
+    $response
+        ->assertRedirect(route('admin.accounts.index'));
 
     $response->assertSessionHas('account_creation.type', 'faculty');
     $response->assertSessionHas(
