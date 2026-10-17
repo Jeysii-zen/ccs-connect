@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'account_creation' => $request->session()->get('account_creation'),
+                'success' => $request->session()->get('success'),
             ],
         ];
     }

@@ -21,6 +21,12 @@ test('password can be confirmed', function () {
     $response->assertSessionHasNoErrors();
 });
 
+test('the confirm password form posts to a named route', function () {
+    // resources/js/pages/Auth/ConfirmPassword.jsx submits to this route name.
+    expect(route('ccs.password.confirm.store', absolute: false))
+        ->toBe('/confirm-password');
+});
+
 test('password is not confirmed with invalid password', function () {
     $user = User::factory()->create();
 

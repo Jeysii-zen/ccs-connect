@@ -1,4 +1,5 @@
-import ApplicationLogo from '@/components/ApplicationLogo';
+﻿import ApplicationLogo from '@/components/ApplicationLogo';
+import { isAnnouncementActionActive } from '@/lib/announcementNavigation';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     CalendarDays,
@@ -22,7 +23,7 @@ import {
     UserX,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Returns '#' instead of crashing if a route name doesn't exist yet.
 const r = (name, params) => (route().has(name) ? route(name, params) : '#');
@@ -37,16 +38,31 @@ const navigationItems = [
             { label: 'Overview', icon: LayoutDashboard, href: r('admin.dashboard') },
         ],
     },
+
     {
         label: 'Announcements',
-        href: r('admin.announcements.index'),
+        href: r('admin.announcements.index', { view: 'announcements' }),
         match: '/admin/announcements',
         icon: Megaphone,
         actions: [
-            { label: 'All Announcements', icon: List, href: r('admin.announcements.index') },
-            { label: 'Create Announcement', icon: Plus, href: r('admin.announcements.index', { create: 1 }) },
+            {
+                label: 'Announcements',
+                icon: Megaphone,
+                href: r('admin.announcements.index', { view: 'announcements' }),
+            },
+            {
+                label: 'Drafts',
+                icon: List,
+                href: r('admin.announcements.index', { view: 'drafts' }),
+            },
+            {
+                label: 'Schedule',
+                icon: CalendarDays,
+                href: r('admin.announcements.index', { view: 'schedule' }),
+            },
         ],
     },
+
     {
         label: 'Events',
         href: r('admin.events.index'),
@@ -101,7 +117,7 @@ const persisted = {
 };
 
 // Sections that have a real page. Add a label here once its page is built.
-const readyLabels = ['Account'];
+const readyLabels = ['Account', 'Announcements'];
 const isReady = (item) => readyLabels.includes(item.label);
 const skeletonSections = ['student', 'faculty', 'deactivated'];
 
@@ -179,11 +195,164 @@ function SkeletonCell({ kind }) {
     }
 }
 
+// Mirrors the Announcements page header for each view (same title sizes and
+// the buttons that view actually shows).
+function AnnouncementsHeaderSkeleton({ view }) {
+    return (
+        <div className="mb-6 flex shrink-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0 flex-1">
+                <div className="h-3 w-48 rounded bg-blue-100" />
+                <div className="mt-3 h-9 w-56 max-w-full rounded-lg bg-slate-200 sm:h-10" />
+                <div className="mt-3 h-3.5 w-80 max-w-full rounded bg-slate-100" />
+            </div>
+
+            {view === 'announcements' && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="h-10 w-full rounded-xl bg-slate-100 sm:w-56" />
+                    <div className="h-12 w-full rounded-xl bg-slate-200 sm:w-52" />
+                </div>
+            )}
+
+            {view === 'schedule' && (
+                <div className="h-12 w-full shrink-0 rounded-xl bg-slate-200 sm:w-64" />
+            )}
+        </div>
+    );
+}
+
+// Newsfeed post: author row, title + text, optional photo, action bar.
+function FeedPostSkeleton({ withImage }) {
+    return (
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="flex items-center gap-3 px-4 pb-3 pt-4">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-slate-200" />
+                <div className="flex-1 space-y-2">
+                    <div className="h-3.5 w-36 rounded bg-slate-200" />
+                    <div className="h-3 w-16 rounded bg-slate-100" />
+                </div>
+            </div>
+            <div className="space-y-2.5 px-4 pb-4">
+                <div className="h-4 w-3/5 rounded bg-slate-200" />
+                <div className="h-3.5 w-full rounded bg-slate-100" />
+                <div className="h-3.5 w-11/12 rounded bg-slate-100" />
+                <div className="h-3.5 w-2/3 rounded bg-slate-100" />
+            </div>
+            {withImage && <div className="aspect-[16/9] w-full bg-slate-100" />}
+            <div className="mx-4 grid grid-cols-2 gap-2 border-t border-slate-100 py-2.5">
+                <div className="mx-auto h-4 w-16 rounded bg-slate-100" />
+                <div className="mx-auto h-4 w-16 rounded bg-slate-100" />
+            </div>
+        </div>
+    );
+}
+
+// Drafts table row: title + excerpt, created date, image count, actions.
+function DraftRowSkeleton() {
+    return (
+        <div className="grid h-[4.5rem] min-w-[680px] grid-cols-[minmax(0,2.4fr)_1fr_0.7fr_1.6fr] items-center border-b border-slate-100 px-5">
+            <div className="space-y-2 pr-4">
+                <div className="h-3.5 w-3/4 rounded bg-slate-200" />
+                <div className="h-3 w-1/2 rounded bg-slate-100" />
+            </div>
+            <div className="h-3.5 w-20 rounded bg-slate-100" />
+            <div className="h-3.5 w-6 rounded bg-slate-100" />
+            <div className="flex justify-end gap-2">
+                <div className="h-8 w-16 rounded-lg bg-slate-100" />
+                <div className="h-8 w-32 rounded-lg bg-slate-200" />
+                <div className="h-8 w-8 rounded-lg bg-slate-100" />
+            </div>
+        </div>
+    );
+}
+
+// Scheduled card row: thumbnail, title, excerpt, schedule time, actions.
+function ScheduleRowSkeleton() {
+    return (
+        <div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:p-6">
+            <div className="h-16 w-16 shrink-0 rounded-xl bg-slate-100" />
+            <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-4 w-1/2 rounded bg-slate-200" />
+                <div className="h-3.5 w-5/6 rounded bg-slate-100" />
+                <div className="h-3 w-44 rounded bg-amber-100" />
+            </div>
+            <div className="flex shrink-0 gap-2">
+                <div className="h-9 w-20 rounded-xl bg-slate-100" />
+                <div className="h-9 w-9 rounded-xl bg-slate-100" />
+            </div>
+        </div>
+    );
+}
+
+function AnnouncementsSkeleton({ view }) {
+    if (view === 'announcements') {
+        return (
+            <div className="mx-auto max-w-7xl pt-5 sm:pt-7">
+                <AnnouncementsHeaderSkeleton view={view} />
+                <div className="mx-auto max-w-[37.5rem] space-y-4 px-1 pt-1 sm:px-2">
+                    <FeedPostSkeleton withImage />
+                    <FeedPostSkeleton />
+                    <FeedPostSkeleton withImage />
+                </div>
+            </div>
+        );
+    }
+
+    // Drafts/Schedule fit the viewport exactly like the real pages.
+    return (
+        <div className="mx-auto flex h-[calc(100dvh-8rem)] min-h-[24rem] max-w-7xl flex-col pt-5 sm:pt-7">
+            <AnnouncementsHeaderSkeleton view={view} />
+
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex shrink-0 flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                    <div className="space-y-2">
+                        <div className="h-4 w-40 rounded bg-slate-200" />
+                        <div className="h-3 w-64 max-w-full rounded bg-slate-100" />
+                    </div>
+                    <div className="h-10 w-full rounded-xl bg-slate-100 sm:w-56" />
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-hidden">
+                    {view === 'drafts' ? (
+                        <>
+                            <div className="grid h-12 min-w-[680px] grid-cols-[minmax(0,2.4fr)_1fr_0.7fr_1.6fr] items-center bg-slate-50 px-5">
+                                <div className="h-2.5 w-12 rounded bg-slate-200" />
+                                <div className="h-2.5 w-20 rounded bg-slate-200" />
+                                <div className="h-2.5 w-12 rounded bg-slate-200" />
+                                <div className="ml-auto h-2.5 w-14 rounded bg-slate-200" />
+                            </div>
+                            {Array.from({ length: 8 }).map((_, row) => (
+                                <DraftRowSkeleton key={row} />
+                            ))}
+                        </>
+                    ) : (
+                        Array.from({ length: 6 }).map((_, row) => (
+                            <ScheduleRowSkeleton key={row} />
+                        ))
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function AdminPageSkeleton({ href }) {
-    const requested = new URL(
-        href ?? '/',
-        window.location.origin,
-    ).searchParams.get('section');
+    const target = new URL(href ?? '/', window.location.origin);
+
+    if (target.pathname.startsWith('/admin/announcements')) {
+        const view = target.searchParams.get('view');
+
+        return (
+            <div className="animate-pulse" aria-label="Loading content" role="status">
+                {/* Unknown views fall back to the feed, like the server does. */}
+                <AnnouncementsSkeleton
+                    view={['drafts', 'schedule'].includes(view) ? view : 'announcements'}
+                />
+                <span className="sr-only">Loading announcements...</span>
+            </div>
+        );
+    }
+
+    const requested = target.searchParams.get('section');
     const section = skeletonSections.includes(requested)
         ? requested
         : 'student';
@@ -310,6 +479,7 @@ export default function AdminConnectLayout({ children }) {
     const [selectedLabel, setSelectedLabel] = useState(null);
     const [pendingHref, setPendingHref] = useState(null);
     const [loading, setLoading] = useState(false);
+    const navigationVisit = useRef(null);
 
     // Track page loads so the UI can react instantly while content loads.
     useEffect(() => {
@@ -321,11 +491,37 @@ export default function AdminConnectLayout({ children }) {
                 return;
             }
 
+            navigationVisit.current = visit;
             setLoading(true);
         });
-        const offFinish = router.on('finish', () => {
-            setLoading(false);
-            setPendingHref(null);
+        const offFinish = router.on('finish', (event) => {
+            const visit = event.detail.visit;
+
+            // Only the navigation that started loading may end it. A background
+            // refresh, or a visit cancelled by a newer click, finishing here
+            // would otherwise snap the highlight back to the previous link.
+            if (visit !== navigationVisit.current) {
+                return;
+            }
+
+            const reset = () => {
+                navigationVisit.current = null;
+                setLoading(false);
+                setPendingHref(null);
+            };
+
+            if (visit.completed) {
+                reset();
+                return;
+            }
+
+            // Cancelled/interrupted: a newer visit replaces it synchronously.
+            // Reset only if none did, so loading can never get stuck.
+            setTimeout(() => {
+                if (navigationVisit.current === visit) {
+                    reset();
+                }
+            }, 0);
         });
 
         return () => {
@@ -412,27 +608,36 @@ export default function AdminConnectLayout({ children }) {
 
     const stripOrigin = (href) => href.replace(/^https?:\/\/[^/]+/, '');
 
+
     const isActionActive = (href) => {
-        const current = new URL(pendingHref ?? currentUrl, window.location.origin);
+        const current = new URL(
+            pendingHref ?? currentUrl,
+            window.location.origin,
+        );
         const target = new URL(stripOrigin(href), window.location.origin);
 
         if (current.pathname !== target.pathname) {
             return false;
         }
 
-        // Account page: match on ?section= only, defaulting to "student".
-        // Search, filter and pagination params no longer affect the highlight.
         if (activeItem.label === 'Account') {
-            const currentSection = current.searchParams.get('section') ?? 'student';
-            const targetSection = target.searchParams.get('section') ?? 'student';
+            const currentSection =
+                current.searchParams.get('section') ?? 'student';
+            const targetSection =
+                target.searchParams.get('section') ?? 'student';
 
             return currentSection === targetSection;
         }
 
+        if (activeItem.label === 'Announcements') {
+            return isAnnouncementActionActive(current, target);
+        }
+
         return current.search === target.search;
     };
-
+    
     const actions = isReady(activeItem) ? activeItem.actions : [];
+
     const activeIndex = actions.findIndex((a) => isActionActive(a.href));
 
     const [indicator, setIndicator] = useState(() => ({
@@ -475,7 +680,7 @@ export default function AdminConnectLayout({ children }) {
                 </p>
 
                 <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 ring-1 ring-blue-100">
-                    {isReady(activeItem) ? activeItem.actions.length : 0}
+                    {actions.length}
                 </span>
             </div>
 

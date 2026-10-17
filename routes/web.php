@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\FirstLoginPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
@@ -18,21 +19,14 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get(
-        '/first-login/password',
-        [FirstLoginPasswordController::class, 'edit']
-    )->name('password.first-login.edit');
+    Route::get('/first-login/password', [FirstLoginPasswordController::class, 'edit'])
+        ->name('password.first-login.edit');
 
-    Route::put(
-        '/first-login/password',
-        [FirstLoginPasswordController::class, 'update']
-    )->name('password.first-login.update');
+    Route::put('/first-login/password', [FirstLoginPasswordController::class, 'update'])
+        ->name('password.first-login.update');
 });
 
-Route::middleware([
-    'auth',
-    'must.change.password',
-])->group(function () {
+Route::middleware(['auth', 'must.change.password'])->group(function () {
     Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])
         ->name('ccs.password.confirm');
 
@@ -41,6 +35,27 @@ Route::middleware([
 
     Route::put('/password', [PasswordController::class, 'update'])
         ->name('ccs.password.update');
+});
+
+Route::middleware([
+    'auth',
+    'must.change.password',
+    'role:admin',
+])->group(function () {
+
+    // Admin announcement management
+    Route::get('/admin/announcements', [AnnouncementController::class, 'index'])
+        ->name('admin.announcements.index');
+
+    Route::post('/admin/announcements', [AnnouncementController::class, 'store'])
+        ->name('admin.announcements.store');
+
+    Route::put('/admin/announcements/{announcement}', [AnnouncementController::class, 'update'])
+        ->name('admin.announcements.update');
+
+    Route::delete('/admin/announcements/{announcement}', [AnnouncementController::class, 'destroy'])
+        ->name('admin.announcements.destroy');
+
 });
 
 Route::get('/dashboard', function () {

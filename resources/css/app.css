@@ -25,6 +25,7 @@
     --animate-float: float 7s ease-in-out infinite;
     --animate-float-slow: float 9s ease-in-out infinite;
     --animate-node: node-pulse 3.2s ease-in-out infinite;
+    --animate-indeterminate: indeterminate-progress 1.4s ease-in-out infinite;
 
     @keyframes fade-up {
         from {
@@ -63,6 +64,17 @@
         }
         50% {
             opacity: 1;
+        }
+    }
+
+    /* Sweeps a bar segment across its track. With reduced motion the
+       segment rests at its static position, still marking "busy". */
+    @keyframes indeterminate-progress {
+        from {
+            transform: translateX(-150%);
+        }
+        to {
+            transform: translateX(175%);
         }
     }
 }
