@@ -41,7 +41,9 @@ class AccountManagementService
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->paginate(20, ['*'], 'students_page')
-            ->withQueryString();
+            ->withQueryString()
+            // Matched against the real-time presence channel's members.
+            ->through(fn (User $user) => $user->append('presence_key'));
     }
 
     /**
@@ -69,7 +71,9 @@ class AccountManagementService
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->paginate(20, ['*'], 'faculty_page')
-            ->withQueryString();
+            ->withQueryString()
+            // Matched against the real-time presence channel's members.
+            ->through(fn (User $user) => $user->append('presence_key'));
     }
 
     /**

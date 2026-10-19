@@ -43,12 +43,6 @@ class AuthenticationService
             ]);
         }
 
-        if ($user->account_status !== AccountStatus::ACTIVE->value) {
-            throw ValidationException::withMessages([
-                'login_identifier' => 'Your account is not active. Please contact the CCS Connect administrator.',
-            ]);
-        }
-
         if (! Hash::check($password, $user->password)) {
             $this->recordFailedAttempt(
                 $user,
@@ -57,6 +51,14 @@ class AuthenticationService
 
             throw ValidationException::withMessages([
                 'login_identifier' => trans('auth.failed'),
+            ]);
+        }
+
+        // Checked only after the password matches, so the "not active"
+        // message cannot be used to discover which accounts exist.
+        if ($user->account_status !== AccountStatus::ACTIVE->value) {
+            throw ValidationException::withMessages([
+                'login_identifier' => 'Your account is not active. Please contact the CCS Connect administrator.',
             ]);
         }
 
@@ -98,16 +100,18 @@ class AuthenticationService
             'attempted_at' => now(),
         ]);
 
+        // Unknown identifiers are recorded in login_attempts only: the
+        // activity log belongs to a user (activity_logs.user_id is required).
+        if (! $user) {
+            return;
+        }
+
         $this->activityLogService->log(
             $user,
             'LOGIN_FAILED',
             'Authentication',
             'Failed login attempt.'
         );
-
-        if (! $user) {
-            return;
-        }
 
         $failedAttempts = $user->failed_login_attempts + 1;
 

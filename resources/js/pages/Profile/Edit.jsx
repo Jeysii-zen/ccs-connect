@@ -1,10 +1,19 @@
+import Toast from '@/components/ui/Toast';
 import CCSConnectLayout from '@/layouts/CCSConnectLayout';
-import { Head } from '@inertiajs/react';
-import DeleteUserForm from './Partials/DeleteUserForm';
+import { Head, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import DeactivateAccountNotice from './Partials/DeactivateAccountNotice';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
 export default function Edit() {
+    const success = usePage().props.flash?.success;
+    const [notification, setNotification] = useState(null);
+
+    useEffect(() => {
+        if (success) setNotification({ type: 'success', message: success });
+    }, [success]);
+
     return (
         <CCSConnectLayout>
             <Head title="Profile" />
@@ -20,7 +29,7 @@ export default function Edit() {
                     </h1>
 
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                        Manage your personal information, password, and account
+                        Manage your email, profile picture, password, and account
                         settings.
                     </p>
                 </div>
@@ -35,10 +44,12 @@ export default function Edit() {
                     </section>
 
                     <section className="rounded-3xl border border-red-100 bg-white p-5 shadow-sm sm:p-7">
-                        <DeleteUserForm className="max-w-2xl" />
+                        <DeactivateAccountNotice className="max-w-2xl" />
                     </section>
                 </div>
             </div>
+
+            <Toast notification={notification} onClose={() => setNotification(null)} />
         </CCSConnectLayout>
     );
 }

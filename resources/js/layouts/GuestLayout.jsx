@@ -7,6 +7,7 @@ import {
     UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 /* -------------------------------------------------------------------------- */
 /*  Page copy                                                                 */
@@ -350,14 +351,15 @@ export default function GuestLayout({ children }) {
     const content = pageContent.login;
 
     return (
-        <div className="min-h-screen overflow-hidden bg-[#f8faff] text-ink">
+        <div className="min-h-screen overflow-hidden bg-[#f8faff] text-ink dark:bg-[#020618]">
+            <ThemeToggle className="fixed right-4 top-4 z-50 border border-slate-200 bg-white/90 shadow-sm backdrop-blur" />
             <div className="relative flex min-h-screen flex-col lg:flex-row">
                 {/* Background decoration */}
                 <div
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-0 overflow-hidden"
                 >
-                    <div className="absolute inset-0 bg-linear-to-br from-white via-[#f6f9ff] to-[#eef4ff]" />
+                    <div className="absolute inset-0 bg-linear-to-br from-white via-[#f6f9ff] to-[#eef4ff] dark:via-[#060b1d] dark:to-[#0a1630]" />
 
                     {/* Dot grid, top left */}
                     <div
@@ -390,7 +392,7 @@ export default function GuestLayout({ children }) {
                             className="inline-flex items-center transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40"
                         >
                             <img
-                                src="/images/ccs-connect-logo.png"
+                                src="/images/ccs-connect-logo.webp"
                                 alt="CCS Connect"
                                 className="h-auto w-52 object-contain sm:w-60"
                             />

@@ -1,4 +1,10 @@
-﻿import AdminConnectLayout from '@/layouts/AdminConnectLayout';
+﻿import DateTimeInput from '@/components/ui/DateTimeInput';
+import FormModal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/FormModal';
+import LoadingImage from '@/components/ui/LoadingImage';
+import GlassConfirmDialog, { glassButtonClass } from '@/components/ui/GlassConfirmDialog';
+import { fieldClass, ghostButtonClass, primaryButtonClass } from '@/components/ui/formStyles';
+import Toast from '@/components/ui/Toast';
+import AdminConnectLayout from '@/layouts/AdminConnectLayout';
 import { describeSubmission } from '@/lib/uploadProgress';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
@@ -20,8 +26,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const inputClass =
-    'mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
+const inputClass = fieldClass;
 
 const labelClass = 'text-sm font-semibold text-slate-700';
 
@@ -112,7 +117,7 @@ function PostImages({ images }) {
 
     if (shown.length === 1) {
         return (
-            <img
+            <img loading="lazy" decoding="async"
                 src={imageUrl(shown[0].image_path)}
                 alt={alt(0)}
                 className="max-h-[30rem] w-full bg-slate-100 object-cover"
@@ -139,14 +144,14 @@ function PostImages({ images }) {
                             : 'aspect-square'
                     }`}
                 >
-                    <img
+                    <img loading="lazy" decoding="async"
                         src={imageUrl(image.image_path)}
                         alt={alt(index)}
                         className="h-full w-full object-cover"
                     />
 
                     {extra > 0 && index === shown.length - 1 && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 text-3xl font-bold text-white">
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#020618]/55 text-3xl font-bold text-white">
                             +{extra}
                             <span className="sr-only"> more images</span>
                         </div>
@@ -263,39 +268,6 @@ function FeedPost({ announcement, onOpen, onEdit, onDelete }) {
     );
 }
 
-function Notification({ notification, onClose }) {
-    if (!notification) return null;
-
-    const success = notification.type === 'success';
-
-    return (
-        <div
-            role="status"
-            className={`mb-5 flex items-start gap-3 rounded-2xl border p-4 ${
-                success
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                    : 'border-red-200 bg-red-50 text-red-800'
-            }`}
-        >
-            {success ? (
-                <CheckCircle2 size={20} className="mt-0.5 shrink-0" />
-            ) : (
-                <AlertCircle size={20} className="mt-0.5 shrink-0" />
-            )}
-
-            <p className="flex-1 text-sm font-medium">{notification.message}</p>
-
-            <button
-                type="button"
-                onClick={onClose}
-                className="rounded-lg p-1 opacity-70 transition hover:bg-black/5 hover:opacity-100"
-                aria-label="Dismiss notification"
-            >
-                <X size={16} />
-            </button>
-        </div>
-    );
-}
 
 const submissionTitles = {
     publish: 'Publishing announcement',
@@ -627,110 +599,58 @@ function AnnouncementFormModal({
     const submitting = form.processing;
 
     return (
-        <div
-            className={`fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-3 transition-[background-color,backdrop-filter] duration-300 sm:items-center sm:p-6 ${
-                submitting
-                    ? 'cursor-progress bg-transparent delay-300'
-                    : 'bg-slate-950/50 backdrop-blur-sm'
-            }`}
-            onMouseDown={(event) => {
-                if (event.target === event.currentTarget && !form.processing) {
-                    requestClose();
-                }
-            }}
-        >
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="announcement-form-title"
-                // inert (not aria-hidden): also releases focus from the
-                // clicked submit button, so nothing focused is hidden.
-                inert={submitting}
-                className={`my-auto flex w-[min(48rem,calc(100vw-2rem))] max-h-[min(90vh,800px)] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl transition-[opacity,visibility] duration-300 ${
-                    // Brief delay so the "Publishing announcement..." label is seen.
-                    submitting ? 'invisible opacity-0 delay-300' : ''
-                }`}
+        <>
+            {/* While a request runs the modal is hidden but stays mounted
+                (form state and progress survive); only the progress toast
+                shows. Hidden also makes it inert, releasing focus from the
+                clicked submit button. */}
+            <FormModal
+                as="form"
+                size="xl"
+                labelledBy="announcement-form-title"
+                busy={form.processing}
+                hidden={submitting}
+                onClose={requestClose}
+                panelProps={{ onSubmit: submit }}
             >
-                <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 via-white to-cyan-50 px-5 py-5 sm:px-7">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
-                            Information dissemination
-                        </p>
-                        <h2
-                            id="announcement-form-title"
-                            className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl"
-                        >
-                            {editing
-                                ? 'Edit announcement'
-                                : isScheduling
-                                ? 'Schedule announcement'
-                                : 'Create announcement'}
-                        </h2>
-                        <p className="mt-1 text-sm text-slate-500">
-                            {editing
-                                ? 'Update the announcement details and images.'
-                                : isScheduling
-                                ? 'Prepare an announcement for publication at a future date and time.'
-                                : 'Prepare an announcement for the CCS community.'}
-                        </p>
-                    </div>
+                <ModalHeader
+                    icon={editing ? Pencil : isScheduling ? CalendarDays : Megaphone}
+                    eyebrow="Information dissemination"
+                    title={
+                        editing
+                            ? 'Edit announcement'
+                            : isScheduling
+                            ? 'Schedule announcement'
+                            : 'Create announcement'
+                    }
+                    titleId="announcement-form-title"
+                    description={
+                        editing
+                            ? 'Update the announcement details and images.'
+                            : isScheduling
+                            ? 'Prepare an announcement for publication at a future date and time.'
+                            : 'Prepare an announcement for the CCS community.'
+                    }
+                    onClose={requestClose}
+                    closeDisabled={form.processing}
+                    closeLabel="Close form"
+                />
 
-                    <button
-                        type="button"
-                        onClick={requestClose}
-                        disabled={form.processing}
-                        className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
-                        aria-label="Close form"
-                    >
-                        <X size={19} />
-                    </button>
-                </div>
-
-                <form
-                    onSubmit={submit}
-                    className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-7"
-                >
+                <ModalBody className="space-y-5">
                     {/* Field errors stay inline under each field after this
-                        dialog is closed, so the user can fix them and retry. */}
-                    {submitError && (
-                        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-                            <div
-                                role="alertdialog"
-                                aria-modal="true"
-                                aria-labelledby="announcement-error-title"
-                                className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="rounded-xl bg-red-50 p-3 text-red-600">
-                                        <AlertCircle size={22} />
-                                    </div>
-
-                                    <div className="min-w-0 flex-1">
-                                        <h3
-                                            id="announcement-error-title"
-                                            className="text-lg font-bold text-slate-900"
-                                        >
-                                            Submission failed
-                                        </h3>
-
-                                        <p className="mt-2 break-words text-sm leading-6 text-slate-600">
-                                            {submitError}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSubmitError('')}
-                                        className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                        notice is closed, so the user can fix them and retry. */}
+                    <GlassConfirmDialog
+                        open={Boolean(submitError)}
+                        icon={AlertCircle}
+                        tone="danger"
+                        title="Submission failed"
+                        confirmLabel="Close"
+                        hideCancel
+                        onCancel={() => setSubmitError('')}
+                        onConfirm={() => setSubmitError('')}
+                    >
+                        <span className="break-words">{submitError}</span>
+                    </GlassConfirmDialog>
 
                     <div>
                         <label htmlFor="title" className={labelClass}>
@@ -772,13 +692,13 @@ function AnnouncementFormModal({
                             <div>
                                 <label
                                     htmlFor="scheduled_date"
-                                    className="mb-2 block text-sm font-semibold text-slate-700"
+                                    className="block text-sm font-semibold text-slate-700"
                                 >
                                     Schedule date
                                     <span className="text-red-500"> *</span>
                                 </label>
 
-                                <input
+                                <DateTimeInput
                                     id="scheduled_date"
                                     name="scheduled_date"
                                     type="date"
@@ -801,20 +721,20 @@ function AnnouncementFormModal({
                                         setSubmitError('');
                                     }}
                                     required
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    className={fieldClass}
                                 />
                             </div>
 
                             <div>
                                 <label
                                     htmlFor="scheduled_time"
-                                    className="mb-2 block text-sm font-semibold text-slate-700"
+                                    className="block text-sm font-semibold text-slate-700"
                                 >
                                     Schedule time
                                     <span className="text-red-500"> *</span>
                                 </label>
 
-                                <input
+                                <DateTimeInput
                                     id="scheduled_time"
                                     name="scheduled_time"
                                     type="time"
@@ -831,7 +751,7 @@ function AnnouncementFormModal({
                                         setSubmitError('');
                                     }}
                                     required
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    className={fieldClass}
                                 />
                             </div>
 
@@ -873,10 +793,11 @@ function AnnouncementFormModal({
                                             aria-pressed={marked}
                                             title={marked ? 'Undo image removal' : 'Mark image for removal'}
                                         >
-                                            <img
+                                            <LoadingImage
                                                 src={imageUrl(image.image_path)}
                                                 alt="Existing announcement"
-                                                className="h-28 w-full object-cover"
+                                                className="h-28 w-full"
+                                                label="Loading…"
                                             />
                                             <span
                                                 className={`block truncate px-2 py-2 text-xs font-semibold ${
@@ -916,7 +837,10 @@ function AnnouncementFormModal({
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            className={`mt-3 flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-4 py-7 text-center transition ${
+                            onClick={(event) => {
+                                if (event.target === event.currentTarget) fileInputRef.current?.click();
+                            }}
+                            className={`mt-3 flex w-full cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed px-4 py-7 text-center transition ${
                                 isDragging
                                     ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-100'
                                     : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50'
@@ -963,10 +887,11 @@ function AnnouncementFormModal({
                                         key={preview.key}
                                         className="overflow-hidden rounded-xl border border-slate-200"
                                     >
-                                        <img
+                                        <LoadingImage
                                             src={preview.url}
                                             alt={preview.name}
-                                            className="h-28 w-full object-cover"
+                                            className="h-28 w-full"
+                                            label="Loading…"
                                         />
                                         <div className="flex items-center gap-2 p-2">
                                             <span className="min-w-0 flex-1 truncate text-xs text-slate-600">
@@ -987,19 +912,22 @@ function AnnouncementFormModal({
                         )}
                     </div>
 
-                    <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                </ModalBody>
+
+                <ModalFooter>
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button
                             type="button"
                             onClick={requestClose}
                             disabled={form.processing}
-                            className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                            className={ghostButtonClass}
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={form.processing}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className={primaryButtonClass}
                         >
                             {form.processing ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -1015,83 +943,53 @@ function AnnouncementFormModal({
                                     : 'Publish Announcement'}
                         </button>
                     </div>
-                </form>
-            </div>
+                </ModalFooter>
+            </FormModal>
 
-            {showCancelConfirmation && !submitting && (
-                <div
-                    className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
-                    onMouseDown={(event) => {
-                        if (event.target === event.currentTarget) {
-                            setShowCancelConfirmation(false);
-                        }
-                    }}
-                >
-                    <div
-                        role="alertdialog"
-                        aria-modal="true"
-                        aria-labelledby="cancel-confirmation-title"
-                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-                    >
-                        <div className="flex items-start gap-3">
-                            <div className="rounded-xl bg-amber-50 p-3 text-amber-600">
-                                <AlertCircle size={22} />
-                            </div>
-
-                            <div>
-                                <h3
-                                    id="cancel-confirmation-title"
-                                    className="text-lg font-bold text-slate-900"
-                                >
-                                    Save your changes?
-                                </h3>
-
-                                <p className="mt-1 text-sm leading-6 text-slate-600">
-                                    You have entered announcement details.
-                                    Would you like to save them as a draft
-                                    before closing?
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex flex-col gap-2">
-                            <button
-                                type="button"
-                                onClick={saveAsDraft}
-                                disabled={form.processing}
-                                className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                Save as Draft
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={discardChanges}
-                                disabled={form.processing}
-                                className="rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
-                            >
-                                Discard changes
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowCancelConfirmation(false)}
-                                disabled={form.processing}
-                                className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50"
-                            >
-                                Continue editing
-                            </button>
-                        </div>
+            <GlassConfirmDialog
+                open={showCancelConfirmation && !submitting}
+                icon={AlertCircle}
+                title="Save your changes?"
+                onCancel={() => setShowCancelConfirmation(false)}
+                actions={
+                    <div className="mt-6 flex flex-col gap-2">
+                        <button
+                            type="button"
+                            onClick={saveAsDraft}
+                            disabled={form.processing}
+                            className={primaryButtonClass}
+                        >
+                            Save as Draft
+                        </button>
+                        <button
+                            type="button"
+                            onClick={discardChanges}
+                            disabled={form.processing}
+                            className="inline-flex items-center justify-center rounded-2xl border border-red-200/80 bg-white/50 px-5 py-2.5 text-sm font-semibold text-red-700 backdrop-blur transition hover:bg-red-50/80 disabled:opacity-50"
+                        >
+                            Discard changes
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowCancelConfirmation(false)}
+                            disabled={form.processing}
+                            className={glassButtonClass}
+                        >
+                            Continue editing
+                        </button>
                     </div>
-                </div>
-            )}
+                }
+            >
+                You have entered announcement details. Would you like to save them as a
+                draft before closing?
+            </GlassConfirmDialog>
 
             <SubmissionProgressToast
                 processing={form.processing}
                 progress={form.progress}
                 intent={submitIntent}
             />
-        </div>
+        </>
     );
 }
 
@@ -1116,10 +1014,9 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
     }, []);
 
     useEffect(() => {
+        // Escape is handled by FormModal; arrows browse the images.
         const onKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                onClose();
-            } else if (images.length > 1 && event.key === 'ArrowRight') {
+            if (images.length > 1 && event.key === 'ArrowRight') {
                 setImageIndex((index) => (index + 1) % images.length);
             } else if (images.length > 1 && event.key === 'ArrowLeft') {
                 setImageIndex((index) => (index - 1 + images.length) % images.length);
@@ -1129,23 +1026,12 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
         window.addEventListener('keydown', onKeyDown);
 
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [images.length, onClose]);
+    }, [images.length]);
 
     return (
-        <div
-            className="fixed inset-0 z-[105] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6"
-            onMouseDown={(event) => {
-                if (event.target === event.currentTarget) onClose();
-            }}
-        >
-            <div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={titleId}
-                className="flex max-h-[min(92vh,900px)] w-[min(52rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
-            >
+        <FormModal size="2xl" labelledBy={titleId} onClose={onClose} zIndex="z-[105]">
                 {/* Header: author and exact publish time */}
-                <header className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+                <header className="flex shrink-0 items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
                     <div
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 text-sm font-bold text-white"
                         aria-hidden="true"
@@ -1169,7 +1055,7 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                         ref={closeButtonRef}
                         type="button"
                         onClick={onClose}
-                        className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+                        className="flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
                         aria-label="Close announcement"
                     >
                         <X size={20} />
@@ -1191,7 +1077,7 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                     </div>
 
                     {image && (
-                        <div className="bg-slate-950">
+                        <div className="bg-[#020618]">
                             <div className="relative flex items-center justify-center">
                                 <img
                                     key={image.announcement_image_id}
@@ -1219,7 +1105,7 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                                             <ChevronRight size={20} />
                                         </button>
                                         <span
-                                            className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-2.5 py-1 text-xs font-semibold text-white"
+                                            className="absolute bottom-3 right-3 rounded-full bg-[#020618]/70 px-2.5 py-1 text-xs font-semibold text-white"
                                             aria-live="polite"
                                         >
                                             {imageIndex + 1} / {images.length}
@@ -1229,7 +1115,7 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                             </div>
 
                             {images.length > 1 && (
-                                <div className="flex gap-2 overflow-x-auto bg-slate-900 p-2 [scrollbar-width:thin]">
+                                <div className="flex gap-2 overflow-x-auto bg-[#0f172b] p-2 [scrollbar-width:thin]">
                                     {images.map((thumb, index) => (
                                         <button
                                             key={thumb.announcement_image_id}
@@ -1243,7 +1129,7 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                                             aria-label={`Show image ${index + 1}`}
                                             aria-current={index === imageIndex || undefined}
                                         >
-                                            <img
+                                            <img loading="lazy" decoding="async"
                                                 src={imageUrl(thumb.image_path)}
                                                 alt=""
                                                 className="h-full w-full object-cover"
@@ -1257,11 +1143,11 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                 </div>
 
                 {/* Actions */}
-                <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-slate-100 px-5 py-3">
+                <ModalFooter className="grid grid-cols-2 gap-2">
                     <button
                         type="button"
                         onClick={() => onEdit(announcement)}
-                        className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        className={ghostButtonClass}
                     >
                         <Pencil size={17} />
                         Edit
@@ -1269,118 +1155,50 @@ function AnnouncementViewModal({ announcement, onClose, onEdit, onDelete }) {
                     <button
                         type="button"
                         onClick={() => onDelete(announcement)}
-                        className="flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-red-50 hover:text-red-600"
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
                     >
                         <Trash2 size={17} />
                         Delete
                     </button>
-                </div>
-            </div>
-        </div>
+                </ModalFooter>
+        </FormModal>
     );
 }
 
 function PublishConfirmation({ announcement, processing, onCancel, onConfirm }) {
-    if (!announcement) return null;
-
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-            <div
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="publish-announcement-title"
-                aria-describedby="publish-announcement-description"
-                className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
-            >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                    <Megaphone size={22} />
-                </div>
-                <h2
-                    id="publish-announcement-title"
-                    className="text-xl font-bold text-slate-950"
-                >
-                    Post this announcement?
-                </h2>
-                <p
-                    id="publish-announcement-description"
-                    className="mt-2 text-sm leading-6 text-slate-600"
-                >
-                    <strong className="break-words">{announcement.title}</strong> will
-                    be published now and moved from Drafts to Announcements.
-                </p>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={processing}
-                        className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={processing}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                    >
-                        {processing ? (
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                        ) : (
-                            <Megaphone size={16} />
-                        )}
-                        {processing ? 'Posting announcement...' : 'Post announcement'}
-                    </button>
-                </div>
-            </div>
-        </div>
+        <GlassConfirmDialog
+            open={Boolean(announcement)}
+            icon={Megaphone}
+            title="Post this announcement?"
+            confirmLabel="Post announcement"
+            processingLabel="Posting announcement..."
+            processing={processing}
+            onCancel={onCancel}
+            onConfirm={onConfirm}
+        >
+            <strong className="break-words">{announcement?.title}</strong> will be published now
+            and moved from Drafts to Announcements.
+        </GlassConfirmDialog>
     );
 }
 
 function DeleteConfirmation({ announcement, processing, onCancel, onConfirm }) {
-    if (!announcement) return null;
-
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
-            <div
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="delete-announcement-title"
-                className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
-            >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                    <Trash2 size={22} />
-                </div>
-                <h2
-                    id="delete-announcement-title"
-                    className="text-xl font-bold text-slate-950"
-                >
-                    Delete announcement?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                    You are about to delete <strong>{announcement.title}</strong>.
-                    This action cannot be undone, and its stored images will also be removed.
-                </p>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={processing}
-                        className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={processing}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-                    >
-                        <Trash2 size={16} />
-                        {processing ? 'Deleting...' : 'Delete announcement'}
-                    </button>
-                </div>
-            </div>
-        </div>
+        <GlassConfirmDialog
+            open={Boolean(announcement)}
+            icon={Trash2}
+            tone="danger"
+            title="Delete announcement?"
+            confirmLabel="Delete announcement"
+            processingLabel="Deleting..."
+            processing={processing}
+            onCancel={onCancel}
+            onConfirm={onConfirm}
+        >
+            You are about to delete <strong className="break-words">{announcement?.title}</strong>.
+            This action cannot be undone, and its stored images will also be removed.
+        </GlassConfirmDialog>
     );
 }
 
@@ -1419,13 +1237,6 @@ export default function Index() {
         }
     }, [page.props.flash?.success]);
 
-    useEffect(() => {
-        if (!notification) return undefined;
-
-        const timeout = window.setTimeout(() => setNotification(null), 5000);
-
-        return () => window.clearTimeout(timeout);
-    }, [notification]);
 
     useEffect(() => {
         const params = new URLSearchParams(page.url.split('?')[1] ?? '');
@@ -1696,14 +1507,15 @@ export default function Index() {
             <Head title={pageTitle} />
 
             {/* Feed: scrolls with the page (the browser's own scrollbar) under a
-                sticky title row. Drafts/Schedule: the page fits the viewport
-                below the top bar (layout pt-24 + pb-8 = 8rem) and never
-                scrolls; only their table or card scrolls inside. */}
+                sticky title row. Drafts/Schedule: on large screens the page
+                fits the viewport below the top bar (layout pt-24 + pb-8 =
+                8rem) and only their list scrolls inside; on smaller screens
+                the page scrolls normally. */}
             <div
                 className={
                     feedView
                         ? 'mx-auto max-w-7xl'
-                        : 'mx-auto flex h-[calc(100dvh-8rem)] min-h-[24rem] max-w-7xl flex-col pt-5 sm:pt-7'
+                        : 'mx-auto flex max-w-7xl flex-col pt-5 sm:pt-7 lg:h-[calc(100dvh-8rem)] lg:min-h-[24rem]'
                 }
             >
                 {/* -mt-24 reaches up under the top bar so posts never show
@@ -1756,7 +1568,7 @@ export default function Index() {
                 </div>
 
 
-                <Notification
+                <Toast
                     notification={notification}
                     onClose={() => setNotification(null)}
                 />
@@ -1811,7 +1623,7 @@ export default function Index() {
                         className={
                             feedView
                                 ? ''
-                                : 'min-h-0 flex-1 overflow-auto overscroll-contain [scrollbar-width:thin]'
+                                : 'overscroll-contain [scrollbar-width:thin] lg:min-h-0 lg:flex-1 lg:overflow-auto'
                         }
                     >
                     {filteredItems.length === 0 ? (
@@ -1894,7 +1706,50 @@ export default function Index() {
                             </div>
                         </div>
                     ) : currentView === 'drafts' ? (
-                        <div>
+                        <>
+                        {/* Phones: one card per draft. */}
+                        <ul className="divide-y divide-slate-100 md:hidden">
+                            {filteredItems.map((announcement) => (
+                                <li key={announcement.announcement_id} className="space-y-3 p-4">
+                                    <div className="min-w-0">
+                                        <p className="break-words font-semibold text-slate-900">{announcement.title}</p>
+                                        <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                                            {announcement.description_content}
+                                        </p>
+                                        <p className="mt-2 text-xs text-slate-500">
+                                            {formatDate(announcement.created_at)} · {announcement.images?.length ?? 0} images
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => requestPublish(announcement)}
+                                            className="flex-1 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-blue-700"
+                                        >
+                                            Post Announcement
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => openEdit(announcement)}
+                                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                        >
+                                            <Pencil size={14} />
+                                            Edit
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDeletingAnnouncement(announcement)}
+                                            aria-label={`Delete ${announcement.title}`}
+                                            className="rounded-xl border border-red-100 px-3 text-red-600 hover:bg-red-50"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="hidden overflow-x-auto md:block">
                             <table className="w-full min-w-[680px] text-left text-sm">
                                 <thead className="sticky top-0 z-10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                                     <tr>
@@ -1953,6 +1808,7 @@ export default function Index() {
                                 </tbody>
                             </table>
                         </div>
+                        </>
                     ) : (
                         <div className="divide-y divide-slate-100">
                             {filteredItems.map((announcement) => (
@@ -1962,7 +1818,7 @@ export default function Index() {
                                 >
                                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-400">
                                         {announcement.images?.[0]?.image_path ? (
-                                            <img
+                                            <img loading="lazy" decoding="async"
                                                 src={imageUrl(announcement.images[0].image_path)}
                                                 alt=""
                                                 className="h-full w-full object-cover"
@@ -1989,7 +1845,7 @@ export default function Index() {
                                         <button
                                             type="button"
                                             onClick={() => openEdit(announcement)}
-                                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
                                         >
                                             <Pencil size={15} />
                                             Edit

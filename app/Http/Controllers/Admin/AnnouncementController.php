@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreAnnouncementRequest;
 use App\Http\Requests\Admin\UpdateAnnouncementRequest;
 use App\Models\Announcement;
 use App\Services\ActivityLogService;
+use App\Services\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -76,7 +77,8 @@ class AnnouncementController extends Controller
 
     public function store(
         StoreAnnouncementRequest $request,
-        ActivityLogService $activityLogService
+        ActivityLogService $activityLogService,
+        ImageOptimizer $imageOptimizer
     ): RedirectResponse {
         $validated = $request->validated();
         $user = $request->user();
@@ -96,6 +98,7 @@ class AnnouncementController extends Controller
                 $images,
                 $status,
                 $scheduledAt,
+                $imageOptimizer,
                 &$uploadedPaths
             ): void {
                 $announcement = Announcement::create([
@@ -114,13 +117,7 @@ class AnnouncementController extends Controller
                 ]);
 
                 foreach ($images as $image) {
-                    $path = $image->store('announcements', 'public');
-
-                    if ($path === false) {
-                        throw new \RuntimeException(
-                            'Failed to store announcement image.'
-                        );
-                    }
+                    $path = $imageOptimizer->store($image, 'announcements', 'public', 'images');
 
                     $uploadedPaths[] = $path;
 
@@ -164,7 +161,8 @@ class AnnouncementController extends Controller
     public function update(
         UpdateAnnouncementRequest $request,
         Announcement $announcement,
-        ActivityLogService $activityLogService
+        ActivityLogService $activityLogService,
+        ImageOptimizer $imageOptimizer
     ): RedirectResponse {
         $validated = $request->validated();
         $user = $request->user();
@@ -177,6 +175,7 @@ class AnnouncementController extends Controller
                 $validated,
                 $announcement,
                 $images,
+                $imageOptimizer,
                 &$uploadedPaths,
                 &$removedPaths
             ): void {
@@ -230,13 +229,7 @@ class AnnouncementController extends Controller
                 }
 
                 foreach ($images as $image) {
-                    $path = $image->store('announcements', 'public');
-
-                    if ($path === false) {
-                        throw new \RuntimeException(
-                            'Failed to store announcement image.'
-                        );
-                    }
+                    $path = $imageOptimizer->store($image, 'announcements', 'public', 'images');
 
                     $uploadedPaths[] = $path;
 
