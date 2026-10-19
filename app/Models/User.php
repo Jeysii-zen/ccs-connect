@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -75,6 +76,24 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * The id this user has on the real-time presence channel. Every member
+     * of a presence channel receives the member list, so it is an opaque
+     * key: only the admin Accounts page knows which account it belongs to.
+     */
+    public function getAuthIdentifierForBroadcasting(): string
+    {
+        return substr(hash_hmac('sha256', "presence|{$this->id}", (string) config('app.key')), 0, 20);
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function presenceKey(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->getAuthIdentifierForBroadcasting());
+    }
+
     public function isOnline(): bool
     {
         return $this->last_seen_at !== null
@@ -88,6 +107,26 @@ class User extends Authenticatable
     {
         return $this->hasMany(
             Announcement::class,
+            'created_by_user_id',
+            'id'
+        );
+    }
+
+    /**
+     * @return HasMany<EventRegistration, $this>
+     */
+    public function eventRegistrations(): HasMany
+    {
+        return $this->hasMany(EventRegistration::class, 'user_id', 'id');
+    }
+
+    /**
+     * @return HasMany<Event, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(
+            Event::class,
             'created_by_user_id',
             'id'
         );

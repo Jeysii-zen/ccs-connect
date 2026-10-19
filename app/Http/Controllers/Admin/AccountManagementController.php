@@ -21,6 +21,19 @@ class AccountManagementController extends Controller
         Request $request,
         AccountManagementService $accountManagementService
     ): Response {
+        // Filters are only used as bound query values; this keeps them
+        // plain, bounded strings.
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'year_level' => ['nullable', 'string', 'max:20'],
+            'block_number' => ['nullable', 'string', 'max:20'],
+            'faculty_search' => ['nullable', 'string', 'max:100'],
+            'employment_type' => ['nullable', 'string', 'max:30'],
+            'deactivated_search' => ['nullable', 'string', 'max:100'],
+            'deactivated_role' => ['nullable', 'string', 'max:20'],
+            'section' => ['nullable', 'string', 'max:20'],
+        ]);
+
         $deactivatedRole = $request->string('deactivated_role')->trim()->value();
 
         if (! in_array($deactivatedRole, ['student', 'faculty'], true)) {

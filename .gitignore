@@ -42,3 +42,19 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
+
+# Local testing environment
+/.env.testing
+
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
+
+# Playwright browser tests (tests/e2e)
+/test-results/
+/playwright-report/
+/blob-report/
+/.playwright/
+/.playwright-mcp/
+
+# Graphify generated output and local cache
+/graphify-out/

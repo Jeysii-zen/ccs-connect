@@ -42,7 +42,8 @@ export default function Modal({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="absolute inset-0 bg-gray-500/75" />
+                    {/* Glass confirmation backdrop (matches GlassConfirmDialog). */}
+                    <div className="absolute inset-0 bg-[#0f172b]/35 backdrop-blur-md" />
                 </TransitionChild>
 
                 <TransitionChild
@@ -54,7 +55,7 @@ export default function Modal({
                     leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 >
                     <DialogPanel
-                        className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}`}
+                        className={`relative mb-6 w-full transform overflow-hidden rounded-[2rem] border border-white/60 bg-white/65 shadow-[0_30px_90px_-20px_rgba(15,23,42,0.5)] ring-1 ring-inset ring-white/40 backdrop-blur-2xl backdrop-saturate-150 transition-all sm:mx-auto ${maxWidthClass}`}
                     >
                         {children}
                     </DialogPanel>

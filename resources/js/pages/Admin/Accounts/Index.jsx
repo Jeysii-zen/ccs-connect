@@ -1,4 +1,8 @@
-﻿import AdminConnectLayout from '@/layouts/AdminConnectLayout';
+﻿import FormModal, { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/FormModal';
+import { usePresence } from '@/lib/presence';
+import GlassConfirmDialog from '@/components/ui/GlassConfirmDialog';
+import { fieldClass, ghostButtonClass, primaryButtonClass } from '@/components/ui/formStyles';
+import AdminConnectLayout from '@/layouts/AdminConnectLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
@@ -18,9 +22,8 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-const inputClass =
-    'mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
+import { Children, cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
+const inputClass = fieldClass;
 const labelClass = 'text-sm font-semibold text-slate-700';
 function FieldError({ message }) {
     if (!message) {
@@ -230,7 +233,7 @@ function AccountTabs({ activeSection, action }) {
                                         },
                                     )
                                 }
-                                className={`relative z-10 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-300 ${
+                                className={`relative z-10 flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 py-2.5 text-xs font-semibold transition-colors duration-300 sm:gap-2 sm:px-4 sm:text-sm ${
                                     isActive
                                         ? 'text-white'
                                         : 'text-slate-600 hover:text-slate-900'
@@ -238,11 +241,11 @@ function AccountTabs({ activeSection, action }) {
                             >
                                 <Icon
                                     size={15}
-                                    className={`transition-transform duration-300 ${
+                                    className={`hidden shrink-0 transition-transform duration-300 min-[400px]:block ${
                                         isActive ? 'scale-110' : 'scale-100'
                                     }`}
                                 />
-                                {tab.label}
+                                <span className="truncate">{tab.label}</span>
                             </button>
                         );
                     })}
@@ -340,7 +343,7 @@ const panelTones = {
         bar: 'from-cyan-500 via-blue-400 to-cyan-500',
     },
     slate: {
-        tile: 'from-slate-500 to-slate-700 shadow-slate-500/30',
+        tile: 'from-slate-500 to-[#314158] shadow-slate-500/30',
         ring: 'bg-slate-400',
         chip: 'bg-slate-100 text-slate-600 ring-slate-200',
         bar: 'from-slate-400 via-emerald-400 to-slate-400',
@@ -379,13 +382,70 @@ function AccountPanel({ icon: Icon, tone = 'blue', count, toolbar, children }) {
     );
 }
 
+// Tailwind needs literal class names, so each table width gets its md: form.
+const tableMinWidths = {
+    'min-w-[900px]': 'md:min-w-[900px]',
+    'min-w-[1000px]': 'md:min-w-[1000px]',
+    'min-w-[1100px]': 'md:min-w-[1100px]',
+};
+
+/**
+ * Below md each row becomes a card: cells stack in two columns with their
+ * column name as a small label; the first cell (the name) and the actions
+ * span the full width. From md up it is the regular table. Rows must be
+ * plain <tr> elements with one <td> per header; other rows (such as the
+ * empty state) are left as they are and span the card width.
+ */
+function labelCells(row, headers) {
+    if (!isValidElement(row)) return row;
+
+    const cells = Children.toArray(row.props.children).filter(isValidElement);
+
+    if (cells.length !== headers.length) {
+        return cloneElement(
+            row,
+            {},
+            cells.map((cell) =>
+                cloneElement(cell, {
+                    className: `${cell.props.className ?? ''} col-span-2`,
+                }),
+            ),
+        );
+    }
+
+    return cloneElement(
+        row,
+        {},
+        cells.map((cell, index) => {
+            const header = headers[index];
+            const wide = index === 0 || header.right;
+
+            return cloneElement(
+                cell,
+                {
+                    key: cell.key ?? header.label,
+                    className: `${cell.props.className ?? ''} ${wide ? 'col-span-2' : ''}`,
+                },
+                !wide && (
+                    <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400 md:hidden">
+                        {header.label}
+                    </span>
+                ),
+                cell.props.children,
+            );
+        }),
+    );
+}
+
 function AccountTable({ headers, minWidth = 'min-w-[900px]', children }) {
     return (
-        <div className="h-[22.75rem] overflow-auto overscroll-contain [scrollbar-width:thin]">
+        <div className="max-h-[32rem] overflow-auto overscroll-contain [scrollbar-width:thin] md:h-[22.75rem] md:max-h-none">
             <table
-                className={`w-full table-fixed ${minWidth} text-left [&_tbody_tr]:h-16 [&_td]:break-words [&_td]:px-5 [&_th]:h-11 [&_th]:px-5`}
+                className={`block w-full text-left md:table md:table-fixed ${
+                    tableMinWidths[minWidth] ?? 'md:min-w-[900px]'
+                } [&_tbody]:block md:[&_tbody]:table-row-group [&_tbody_tr]:grid [&_tbody_tr]:grid-cols-2 [&_tbody_tr]:gap-x-4 [&_tbody_tr]:gap-y-3 [&_tbody_tr]:p-4 md:[&_tbody_tr]:table-row md:[&_tbody_tr]:h-16 md:[&_tbody_tr]:p-0 [&_td]:block [&_td]:min-w-0 [&_td]:break-words [&_td]:px-0 [&_td]:py-0 md:[&_td]:table-cell md:[&_td]:px-5 md:[&_td]:py-3.5 [&_th]:h-11 [&_th]:px-5`}
             >
-                <colgroup>
+                <colgroup className="hidden md:table-column-group">
                     {headers.map((header) => (
                         <col
                             key={header.label}
@@ -398,7 +458,7 @@ function AccountTable({ headers, minWidth = 'min-w-[900px]', children }) {
                     ))}
                 </colgroup>
 
-                <thead className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <thead className="hidden text-[11px] font-bold uppercase tracking-wider text-slate-400 md:table-header-group">
                     <tr>
                         {headers.map((header) => (
                             <th
@@ -413,15 +473,22 @@ function AccountTable({ headers, minWidth = 'min-w-[900px]', children }) {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
-                    {children}
+                    {Children.map(children, (row) => labelCells(row, headers))}
                 </tbody>
             </table>
         </div>
     );
 }
 
-function StatusBadge({ lastSeenAt }) {
-    const status = getPresenceStatus(lastSeenAt);
+// Live from the Reverb presence channel; last_seen_at only when Reverb is
+// unreachable.
+function StatusBadge({ presenceKey, lastSeenAt }) {
+    const presence = usePresence();
+    const status = presence.live
+        ? presence.members.has(presenceKey)
+            ? 'Online'
+            : 'Offline'
+        : getPresenceStatus(lastSeenAt);
     const isOnline = status === 'Online';
 
     return (
@@ -579,201 +646,32 @@ const sectionHeaders = {
     },
 };
 
-const confirmTones = {
-    danger: {
-        Icon: Trash2,
-        tile: 'text-red-600 ring-red-200/70 shadow-[0_10px_30px_-6px_rgba(239,68,68,0.55)]',
-        pulse: 'bg-red-400/40',
-        button: 'from-red-600 to-rose-500 shadow-[0_10px_30px_-8px_rgba(239,68,68,0.7)] focus:ring-red-200',
-    },
-    success: {
-        Icon: RotateCcw,
-        tile: 'text-emerald-600 ring-emerald-200/70 shadow-[0_10px_30px_-6px_rgba(16,185,129,0.55)]',
-        pulse: 'bg-emerald-400/40',
-        button: 'from-emerald-600 to-teal-500 shadow-[0_10px_30px_-8px_rgba(16,185,129,0.7)] focus:ring-emerald-200',
-    },
+const confirmIcons = {
+    danger: Trash2,
+    success: RotateCcw,
 };
 
-const CONFIRM_EXIT_MS = 280;
-const smoothEase = 'cubic-bezier(0.22, 1, 0.36, 1)';
-
+// Deactivate/reactivate confirmation, on the shared glass dialog (which
+// keeps showing the last action while it fades out).
 function ConfirmDialog({ action, processing, onCancel, onConfirm }) {
-    const [mounted, setMounted] = useState(false);
-    const [visible, setVisible] = useState(false);
-
-    // Keep the last content while the dialog fades out.
-    const lastAction = useRef(action);
-    const lastProcessing = useRef(processing);
-
-    if (action) {
-        lastAction.current = action;
-        lastProcessing.current = processing;
-    }
-
-    useEffect(() => {
-        if (action) {
-            setMounted(true);
-
-            const frame = requestAnimationFrame(() =>
-                requestAnimationFrame(() => setVisible(true)),
-            );
-
-            return () => cancelAnimationFrame(frame);
-        }
-
-        setVisible(false);
-
-        const timeout = window.setTimeout(
-            () => setMounted(false),
-            CONFIRM_EXIT_MS,
-        );
-
-        return () => window.clearTimeout(timeout);
-    }, [action]);
-
-    useEffect(() => {
-        if (!action) {
-            return undefined;
-        }
-
-        const onKeyDown = (event) => {
-            if (event.key === 'Escape' && !processing) {
-                onCancel();
-            }
-        };
-
-        window.addEventListener('keydown', onKeyDown);
-
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [action, processing, onCancel]);
-
-    const view = lastAction.current;
-
-    if (!mounted || !view) {
-        return null;
-    }
-
-    const isProcessing = action ? processing : lastProcessing.current;
-    const tone = confirmTones[view.tone];
-    const Icon = tone.Icon;
-
     return (
-        <div
-            className={`fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/35 p-4 backdrop-blur-md transition-opacity ${
-                visible ? 'opacity-100' : 'pointer-events-none opacity-0'
-            }`}
-            style={{
-                transitionDuration: `${CONFIRM_EXIT_MS}ms`,
-                transitionTimingFunction: smoothEase,
-            }}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="confirm-dialog-title"
-            aria-describedby="confirm-dialog-description"
-            onClick={() => !isProcessing && onCancel()}
+        <GlassConfirmDialog
+            open={Boolean(action)}
+            icon={confirmIcons[action?.tone]}
+            tone={action?.tone}
+            title={action?.title}
+            confirmLabel={action?.confirmLabel}
+            processing={processing}
+            onCancel={onCancel}
+            onConfirm={onConfirm}
         >
-            <div
-                className={`relative w-full max-w-sm transition-all ${
-                    visible
-                        ? 'translate-y-0 scale-100 opacity-100'
-                        : 'translate-y-3 scale-[0.97] opacity-0'
-                }`}
-                style={{
-                    transitionDuration: `${CONFIRM_EXIT_MS}ms`,
-                    transitionTimingFunction: smoothEase,
-                }}
-                onClick={(event) => event.stopPropagation()}
-            >
-                {/* Glass card */}
-                <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/65 shadow-[0_30px_90px_-20px_rgba(15,23,42,0.5)] ring-1 ring-inset ring-white/40 backdrop-blur-2xl backdrop-saturate-150">
-                    <div
-                        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/60 via-white/5 to-white/20"
-                        aria-hidden="true"
-                    />
-                    <div
-                        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
-                        aria-hidden="true"
-                    />
+            <p>{action?.description}</p>
 
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        disabled={isProcessing}
-                        aria-label="Close"
-                        className="absolute right-4 top-4 z-10 rounded-full p-1.5 text-slate-500 transition hover:bg-white/70 hover:text-slate-800 disabled:opacity-40"
-                    >
-                        <X size={16} />
-                    </button>
-
-                    <div className="relative px-7 pb-6 pt-9 text-center">
-                        <div className="relative mx-auto h-16 w-16">
-                            <span
-                                className={`ax-ring absolute inset-0 rounded-2xl ${tone.pulse}`}
-                            />
-                            <div
-                                className={`relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/80 bg-white/70 ring-1 backdrop-blur-xl ${tone.tile}`}
-                            >
-                                <Icon size={26} />
-                            </div>
-                        </div>
-
-                        <h2
-                            id="confirm-dialog-title"
-                            className="mt-5 text-xl font-bold tracking-tight text-slate-950"
-                        >
-                            {view.title}
-                        </h2>
-                        <p
-                            id="confirm-dialog-description"
-                            className="mx-auto mt-2 max-w-[18rem] text-sm leading-6 text-slate-600"
-                        >
-                            {view.description}
-                        </p>
-
-                        <div className="mt-5 rounded-2xl border border-white/70 bg-white/50 px-4 py-3 text-left shadow-inner backdrop-blur-md">
-                            <p className="truncate text-sm font-semibold text-slate-900">
-                                {view.name}
-                            </p>
-                            <p className="mt-0.5 truncate text-xs text-slate-500">
-                                {view.meta}
-                            </p>
-                        </div>
-
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                            <button
-                                type="button"
-                                autoFocus
-                                disabled={isProcessing}
-                                onClick={onCancel}
-                                className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/70 bg-white/50 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-white/70 active:translate-y-0 active:scale-95 disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="button"
-                                disabled={isProcessing}
-                                onClick={onConfirm}
-                                className={`relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-br text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus:ring-4 active:translate-y-0 active:scale-95 disabled:pointer-events-none disabled:opacity-70 ${tone.button}`}
-                            >
-                                <span
-                                    className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent"
-                                    aria-hidden="true"
-                                />
-                                {isProcessing && (
-                                    <span className="relative h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                                )}
-                                <span className="relative">
-                                    {isProcessing
-                                        ? 'Please wait…'
-                                        : view.confirmLabel}
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            <div className="mt-5 rounded-2xl border border-white/70 bg-white/50 px-4 py-3 text-left shadow-inner backdrop-blur-md">
+                <p className="truncate text-sm font-semibold text-slate-900">{action?.name}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{action?.meta}</p>
             </div>
-        </div>
+        </GlassConfirmDialog>
     );
 }
 
@@ -1221,7 +1119,7 @@ export default function Index() {
                                         </td>
 
                                         <td className="px-4 py-3.5">
-                                            <StatusBadge lastSeenAt={student.last_seen_at} />
+                                            <StatusBadge presenceKey={student.presence_key} lastSeenAt={student.last_seen_at} />
                                         </td>
 
                                         <td className="whitespace-nowrap px-4 py-3.5 text-sm text-slate-600">
@@ -1229,7 +1127,7 @@ export default function Index() {
                                         </td>
 
                                         <td className="px-6 py-3.5">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex gap-2 md:justify-end">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -1394,7 +1292,7 @@ export default function Index() {
                                         </td>
 
                                         <td className="px-4 py-3.5">
-                                            <StatusBadge lastSeenAt={member.last_seen_at} />
+                                            <StatusBadge presenceKey={member.presence_key} lastSeenAt={member.last_seen_at} />
                                         </td>
 
                                         <td className="whitespace-nowrap px-4 py-3.5 text-sm text-slate-600">
@@ -1402,7 +1300,7 @@ export default function Index() {
                                         </td>
 
                                         <td className="px-6 py-3.5">
-                                            <div className="flex justify-end gap-2">
+                                            <div className="flex gap-2 md:justify-end">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -1646,62 +1544,41 @@ export default function Index() {
 
                 {/* Account Creation Modal */}
                 {accountCreationType && (
-                    <div
-                        className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="account-creation-modal-title"
+                    <FormModal
+                        as="form"
+                        size="xl"
+                        labelledBy="account-creation-modal-title"
+                        busy={studentForm.processing || facultyForm.processing}
+                        onClose={closeAccountCreationModal}
+                        panelProps={{
+                            onSubmit: (event) =>
+                                accountCreationType === 'student'
+                                    ? handleStudentSubmit(event)
+                                    : handleFacultySubmit(event),
+                        }}
                     >
-                        <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-                            {/* Modal Header */}
-                            <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                                        {accountCreationType === 'student' ? (
-                                            <GraduationCap size={20} />
-                                        ) : (
-                                            <UserPlus size={20} />
-                                        )}
-                                    </div>
+                        <ModalHeader
+                            icon={accountCreationType === 'student' ? GraduationCap : UserPlus}
+                            eyebrow="Account management"
+                            title={
+                                accountCreationType === 'student'
+                                    ? 'Create Student Account'
+                                    : 'Create Faculty Account'
+                            }
+                            titleId="account-creation-modal-title"
+                            description={
+                                accountCreationType === 'student'
+                                    ? 'Create an approved CCS Connect student account using the official student information.'
+                                    : 'Create an approved CCS Connect faculty account with the required employment information.'
+                            }
+                            onClose={closeAccountCreationModal}
+                            closeDisabled={studentForm.processing || facultyForm.processing}
+                            closeLabel="Close account creation modal"
+                        />
 
-                                    <div>
-                                        <h2
-                                            id="account-creation-modal-title"
-                                            className="text-lg font-bold text-slate-950"
-                                        >
-                                            {accountCreationType === 'student'
-                                                ? 'Create Student Account'
-                                                : 'Create Faculty Account'}
-                                        </h2>
-
-                                        <p className="mt-0.5 text-sm text-slate-500">
-                                            {accountCreationType === 'student'
-                                                ? 'Create an approved CCS Connect student account using the official student information.'
-                                                : 'Create an approved CCS Connect faculty account with the required employment information.'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={closeAccountCreationModal}
-                                    disabled={
-                                        studentForm.processing || facultyForm.processing
-                                    }
-                                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                    aria-label="Close account creation modal"
-                                >
-                                    <X size={19} />
-                                </button>
-                            </div>
-
-                            {/* Modal Body */}
-                            <div className="overflow-y-auto px-6 py-6">
+                        <ModalBody>
                                 {accountCreationType === 'student' && (
-                                    <form
-                                        onSubmit={handleStudentSubmit}
-                                        className="space-y-6"
-                                    >
+                                    <div className="space-y-6">
                                         <div className="grid gap-5 sm:grid-cols-2">
                                             <FormField
                                                 label="First Name"
@@ -1817,34 +1694,11 @@ export default function Index() {
                                             />
                                         </div>
 
-                                        <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
-                                            <button
-                                                type="button"
-                                                onClick={closeAccountCreationModal}
-                                                disabled={studentForm.processing}
-                                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                Cancel
-                                            </button>
-
-                                            <button
-                                                type="submit"
-                                                disabled={studentForm.processing}
-                                                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                {studentForm.processing
-                                                    ? 'Creating...'
-                                                    : 'Create Student'}
-                                            </button>
-                                        </div>
-                                    </form>
+                                    </div>
                                 )}
 
                                 {accountCreationType === 'faculty' && (
-                                    <form
-                                        onSubmit={handleFacultySubmit}
-                                        className="space-y-6"
-                                    >
+                                    <div className="space-y-6">
                                         <div className="grid gap-5 sm:grid-cols-2">
                                             <FormField
                                                 label="First Name"
@@ -1957,31 +1811,35 @@ export default function Index() {
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
-                                            <button
-                                                type="button"
-                                                onClick={closeAccountCreationModal}
-                                                disabled={facultyForm.processing}
-                                                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                Cancel
-                                            </button>
-
-                                            <button
-                                                type="submit"
-                                                disabled={facultyForm.processing}
-                                                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                {facultyForm.processing
-                                                    ? 'Creating...'
-                                                    : 'Create Faculty'}
-                                            </button>
-                                        </div>
-                                    </form>
+                                    </div>
                                 )}
+                        </ModalBody>
+
+                        <ModalFooter>
+                            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    onClick={closeAccountCreationModal}
+                                    disabled={studentForm.processing || facultyForm.processing}
+                                    className={ghostButtonClass}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    disabled={studentForm.processing || facultyForm.processing}
+                                    className={primaryButtonClass}
+                                >
+                                    {studentForm.processing || facultyForm.processing
+                                        ? 'Creating...'
+                                        : accountCreationType === 'student'
+                                          ? 'Create Student'
+                                          : 'Create Faculty'}
+                                </button>
                             </div>
-                        </div>
-                    </div>
+                        </ModalFooter>
+                    </FormModal>
                 )}
             </div>
         <ConfirmDialog
@@ -2041,33 +1899,16 @@ export default function Index() {
             </div>
         )}
         {createdAccount && (
-            <div
-                className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="temporary-password-modal-title"
-            >
-                <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
-                    <div className="border-b border-slate-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 px-6 py-6">
-                        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                            <CheckCircle2 size={14} />
-                            Account Created
-                        </div>
+            <FormModal size="md" labelledBy="temporary-password-modal-title" zIndex="z-[110]">
+                <ModalHeader
+                    icon={CheckCircle2}
+                    eyebrow="Account Created"
+                    title={`${createdAccount.type} Account Created`}
+                    titleId="temporary-password-modal-title"
+                    description="The account was created successfully. Give the temporary password to the account owner securely."
+                />
 
-                        <h2
-                            id="temporary-password-modal-title"
-                            className="text-2xl font-bold text-slate-950"
-                        >
-                            {createdAccount.type} Account Created
-                        </h2>
-
-                        <p className="mt-2 text-sm leading-6 text-slate-500">
-                            The account was created successfully. Give the
-                            temporary password to the account owner securely.
-                        </p>
-                    </div>
-
-                    <div className="space-y-5 px-6 py-6">
+                <ModalBody className="space-y-5">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                 Account ID
@@ -2115,74 +1956,63 @@ export default function Index() {
                             </p>
                         </div>
 
-                        <div className="flex justify-end border-t border-slate-100 pt-5">
-                            <button
-                                type="button"
-                                onClick={() => setCreatedAccount(null)}
-                                className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                            >
-                                Done
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
-        {editingStudent && (
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-sm"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="student-edit-modal-title"
-            >
-                <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-                    <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-br from-blue-50/80 via-white to-cyan-50/70 px-6 py-5">
-                        <div>
-                            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                                <Pencil size={13} />
-                                Edit Student Account
-                            </div>
+                </ModalBody>
 
-                            <h2
-                                id="student-edit-modal-title"
-                                className="text-xl font-bold text-slate-950"
-                            >
-                                Update Student Information
-                            </h2>
-
-                            <p className="mt-1 text-sm text-slate-500">
-                                Update the official information for{' '}
-                                <span className="font-semibold text-slate-700">
-                                    {formatFullName(editingStudent)}
-                                </span>
-                                .
-                            </p>
-                        </div>
-
+                <ModalFooter>
+                    <div className="flex justify-end">
                         <button
                             type="button"
-                            onClick={() => {
-                                if (studentEditForm.processing) {
-                                    return;
-                                }
-
-                                setEditingStudent(null);
-                                studentEditForm.reset();
-                                studentEditForm.clearErrors();
-                            }}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label="Close student edit modal"
-                            disabled={studentEditForm.processing}
+                            onClick={() => setCreatedAccount(null)}
+                            className={`${primaryButtonClass} w-full sm:w-auto`}
                         >
-                            <X size={18} />
+                            Done
                         </button>
                     </div>
+                </ModalFooter>
+            </FormModal>
+        )}
+        {editingStudent && (
+            <FormModal
+                as="form"
+                size="xl"
+                labelledBy="student-edit-modal-title"
+                busy={studentEditForm.processing}
+                onClose={() => {
+                        if (studentEditForm.processing) return;
 
-                    <form
-                        onSubmit={handleStudentEditSubmit}
-                        className="max-h-[75vh] overflow-y-auto"
-                    >
-                        <div className="grid gap-5 px-6 py-6 sm:grid-cols-2">
+                        setEditingStudent(null);
+                        studentEditForm.reset();
+                        studentEditForm.clearErrors();
+                    }}
+                panelProps={{ onSubmit: handleStudentEditSubmit }}
+            >
+                <ModalHeader
+                    icon={Pencil}
+                    eyebrow="Edit Student Account"
+                    title="Update Student Information"
+                    titleId="student-edit-modal-title"
+                    description={
+                        <>
+                            Update the official information for{' '}
+                            <span className="font-semibold text-slate-700">
+                                {formatFullName(editingStudent)}
+                            </span>
+                            .
+                        </>
+                    }
+                    onClose={() => {
+                        if (studentEditForm.processing) return;
+
+                        setEditingStudent(null);
+                        studentEditForm.reset();
+                        studentEditForm.clearErrors();
+                    }}
+                    closeDisabled={studentEditForm.processing}
+                    closeLabel="Close student edit modal"
+                />
+
+                <ModalBody>
+                        <div className="grid gap-5 sm:grid-cols-2">
                             <FormField
                                 label="First Name"
                                 name="first_name"
@@ -2297,89 +2127,78 @@ export default function Index() {
                             />
                         </div>
 
-                        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:justify-end">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setEditingStudent(null);
-                                    studentEditForm.reset();
-                                    studentEditForm.clearErrors();
-                                }}
-                                disabled={studentEditForm.processing}
-                                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
+                </ModalBody>
 
-                            <button
-                                type="submit"
-                                disabled={studentEditForm.processing}
-                                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {studentEditForm.processing
-                                    ? 'Saving...'
-                                    : 'Save Changes'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        )}
-        {editingFaculty && (
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-sm"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="faculty-edit-modal-title"
-            >
-                <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-                    <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-gradient-to-br from-blue-50/80 via-white to-cyan-50/70 px-6 py-5">
-                        <div>
-                            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">
-                                <Pencil size={13} />
-                                Edit Faculty Account
-                            </div>
-
-                            <h2
-                                id="faculty-edit-modal-title"
-                                className="text-xl font-bold text-slate-950"
-                            >
-                                Update Faculty Information
-                            </h2>
-
-                            <p className="mt-1 text-sm text-slate-500">
-                                Update the official information for{' '}
-                                <span className="font-semibold text-slate-700">
-                                    {formatFullName(editingFaculty)}
-                                </span>
-                                .
-                            </p>
-                        </div>
-
+                <ModalFooter>
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button
                             type="button"
                             onClick={() => {
-                                if (facultyEditForm.processing) {
-                                    return;
-                                }
+                        if (studentEditForm.processing) return;
 
-                                setEditingFaculty(null);
-                                facultyEditForm.reset();
-                                facultyEditForm.clearErrors();
-                            }}
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            aria-label="Close faculty edit modal"
-                            disabled={facultyEditForm.processing}
+                        setEditingStudent(null);
+                        studentEditForm.reset();
+                        studentEditForm.clearErrors();
+                    }}
+                            disabled={studentEditForm.processing}
+                            className={ghostButtonClass}
                         >
-                            <X size={18} />
+                            Cancel
+                        </button>
+
+                        <button
+                            type="submit"
+                            disabled={studentEditForm.processing}
+                            className={primaryButtonClass}
+                        >
+                            {studentEditForm.processing ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
+                </ModalFooter>
+            </FormModal>
+        )}
+        {editingFaculty && (
+            <FormModal
+                as="form"
+                size="xl"
+                labelledBy="faculty-edit-modal-title"
+                busy={facultyEditForm.processing}
+                onClose={() => {
+                        if (facultyEditForm.processing) return;
 
-                    <form
-                        onSubmit={handleFacultyEditSubmit}
-                        className="max-h-[75vh] overflow-y-auto"
-                    >
-                        <div className="grid gap-5 px-6 py-6 sm:grid-cols-2">
+                        setEditingFaculty(null);
+                        facultyEditForm.reset();
+                        facultyEditForm.clearErrors();
+                    }}
+                panelProps={{ onSubmit: handleFacultyEditSubmit }}
+            >
+                <ModalHeader
+                    icon={Pencil}
+                    eyebrow="Edit Faculty Account"
+                    title="Update Faculty Information"
+                    titleId="faculty-edit-modal-title"
+                    description={
+                        <>
+                            Update the official information for{' '}
+                            <span className="font-semibold text-slate-700">
+                                {formatFullName(editingFaculty)}
+                            </span>
+                            .
+                        </>
+                    }
+                    onClose={() => {
+                        if (facultyEditForm.processing) return;
+
+                        setEditingFaculty(null);
+                        facultyEditForm.reset();
+                        facultyEditForm.clearErrors();
+                    }}
+                    closeDisabled={facultyEditForm.processing}
+                    closeLabel="Close faculty edit modal"
+                />
+
+                <ModalBody>
+                        <div className="grid gap-5 sm:grid-cols-2">
                             <FormField
                                 label="First Name"
                                 name="first_name"
@@ -2493,33 +2312,35 @@ export default function Index() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-4 sm:flex-row sm:justify-end">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setEditingFaculty(null);
-                                    facultyEditForm.reset();
-                                    facultyEditForm.clearErrors();
-                                }}
-                                disabled={facultyEditForm.processing}
-                                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
+                </ModalBody>
 
-                            <button
-                                type="submit"
-                                disabled={facultyEditForm.processing}
-                                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {facultyEditForm.processing
-                                    ? 'Saving...'
-                                    : 'Save Changes'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                <ModalFooter>
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            onClick={() => {
+                        if (facultyEditForm.processing) return;
+
+                        setEditingFaculty(null);
+                        facultyEditForm.reset();
+                        facultyEditForm.clearErrors();
+                    }}
+                            disabled={facultyEditForm.processing}
+                            className={ghostButtonClass}
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            type="submit"
+                            disabled={facultyEditForm.processing}
+                            className={primaryButtonClass}
+                        >
+                            {facultyEditForm.processing ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
+                </ModalFooter>
+            </FormModal>
         )}
         </AdminConnectLayout>
     );

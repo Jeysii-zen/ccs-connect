@@ -1,4 +1,5 @@
 import InputError from '@/components/InputError';
+import InputLabel from '@/components/InputLabel';
 import PrimaryButton from '@/components/PrimaryButton';
 import TextInput from '@/components/TextInput';
 import GuestLayout from '@/layouts/GuestLayout';
@@ -32,6 +33,8 @@ export default function ForgotPassword({ status }) {
             )}
 
             <form onSubmit={submit}>
+                <InputLabel htmlFor="email" value="Email" />
+
                 <TextInput
                     id="email"
                     type="email"

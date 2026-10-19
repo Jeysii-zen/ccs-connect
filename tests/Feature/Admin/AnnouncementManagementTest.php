@@ -312,13 +312,7 @@ test('admin can upload images when creating an announcement', function () {
             'description_content' => 'This announcement includes images.',
             'announcement_status' => 'Draft',
             'images' => [
-                UploadedFile::fake()->createWithContent(
-                    'campus-one.jpg',
-                    base64_decode(
-                        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAEFAqf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/AX//xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/AX//xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAY/Al//2Q==',
-                        true
-                    )
-                ),
+                UploadedFile::fake()->image('campus-one.jpg', 800, 600),
             ],
         ]);
 
@@ -330,9 +324,10 @@ test('admin can upload images when creating an announcement', function () {
 
     expect($announcement->images)->toHaveCount(1);
 
-    Storage::disk('public')->assertExists(
-        $announcement->images->first()->image_path
-    );
+    $path = $announcement->images->first()->image_path;
+
+    Storage::disk('public')->assertExists($path);
+    expect($path)->toEndWith('.webp');
 });
 
 test('admin can remove an image when updating an announcement', function () {
@@ -714,8 +709,8 @@ test('a failed image save removes the files it already stored', function () {
             'description_content' => 'Second image fails.',
             'announcement_status' => 'Published',
             'images' => [
-                UploadedFile::fake()->create('first.jpg', 10, 'image/jpeg'),
-                UploadedFile::fake()->create('second.jpg', 10, 'image/jpeg'),
+                UploadedFile::fake()->image('first.jpg', 40, 40),
+                UploadedFile::fake()->image('second.jpg', 40, 40),
             ],
         ]))->toThrow(RuntimeException::class, 'Simulated storage failure.');
 

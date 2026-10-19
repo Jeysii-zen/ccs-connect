@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Off: private files (proof photos) are served only through
+            // ProofController after authorization, never by signed URL.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

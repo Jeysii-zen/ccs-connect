@@ -25,11 +25,10 @@
         <env name="CACHE_STORE" value="array"/>
 
         <env name="DB_CONNECTION" value="mysql"/>
-	<env name="DB_HOST" value="127.0.0.1"/>
-	<env name="DB_PORT" value="3306"/>
-	<env name="DB_DATABASE" value="ccs_connect_test"/>
-	<env name="DB_USERNAME" value="root"/>
-	<env name="DB_PASSWORD" value="CCSConnect@1234"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="ccs_connect_test"/>
+        <env name="DB_USERNAME" value="ccs_connect_test_user"/>
         <env name="DB_URL" value=""/>
 
         <env name="MAIL_MAILER" value="array"/>

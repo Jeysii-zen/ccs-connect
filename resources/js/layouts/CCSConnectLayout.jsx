@@ -12,6 +12,9 @@ import {
     X,
 } from 'lucide-react';
 import { useState } from 'react';
+import ThemeToggle from '@/components/ui/ThemeToggle';
+import PageSkeleton from '@/components/ui/PageSkeleton';
+import usePendingPage from '@/lib/usePendingPage';
 
 const navigationItems = [
     {
@@ -36,10 +39,36 @@ const navigationItems = [
     },
 ];
 
+const roleLabels = {
+    student: 'Student',
+    faculty: 'Faculty',
+    admin: 'Administrator',
+};
+
+// Faculty manage their events from Events; students browse and register.
+const navigationFor = (user) =>
+    navigationItems.map((item) => {
+        if (item.label !== 'Events') return item;
+
+        if (user.role === 'faculty') {
+            return { ...item, href: route('faculty.events.index'), match: '/faculty/events' };
+        }
+
+        return user.role === 'student' ? { ...item, href: route('events.index'), match: '/events' } : item;
+    });
+
 export default function CCSConnectLayout({ children }) {
+    const pendingPage = usePendingPage();
     const page = usePage();
     const user = page.props.auth.user;
     const currentUrl = page.url;
+
+    const items = navigationFor(user);
+    const matchedIndex = items.findIndex(
+        (item) => item.match && currentUrl.startsWith(item.match),
+    );
+    // Pages without their own entry (e.g. Profile) keep Dashboard highlighted.
+    const activeIndex = matchedIndex === -1 ? 0 : matchedIndex;
 
     const userName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
     const userInitials =
@@ -57,7 +86,7 @@ export default function CCSConnectLayout({ children }) {
         <div className="min-h-screen bg-slate-50 text-slate-900">
             {/* Mobile overlay */}
             <div
-                className={`fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
+                className={`fixed inset-0 z-40 bg-[#020618]/35 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
                     showMobileSidebar
                         ? 'opacity-100'
                         : 'pointer-events-none opacity-0'
@@ -130,7 +159,7 @@ export default function CCSConnectLayout({ children }) {
 
                 {/* Navigation */}
                 <nav className="mt-4 space-y-2">
-                    {navigationItems.map(
+                    {items.map(
                         ({ label, href, icon: Icon }, index) => (
                             <div
                                 key={label}
@@ -142,8 +171,9 @@ export default function CCSConnectLayout({ children }) {
                                 <a
                                     href={href}
                                     onClick={closeMobileSidebar}
+                                    aria-current={index === activeIndex ? 'page' : undefined}
                                     className={`group relative flex h-12 items-center rounded-2xl transition-colors duration-200 ease-out ${
-                                        index === 0
+                                        index === activeIndex
                                             ? 'bg-blue-100 text-blue-700 shadow-sm'
                                             : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'
                                     }`}
@@ -167,7 +197,7 @@ export default function CCSConnectLayout({ children }) {
                                     </span>
 
                                     {sidebarCollapsed && (
-                                        <span className="pointer-events-none absolute left-full top-1/2 z-[100] ml-3 -translate-y-1/2 translate-x-[-5px] whitespace-nowrap rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-xl transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+                                        <span className="pointer-events-none absolute left-full top-1/2 z-[100] ml-3 -translate-y-1/2 translate-x-[-5px] whitespace-nowrap rounded-xl bg-[#020618] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-xl transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100">
                                             {label}
 
                                             <span className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 border-y-[5px] border-r-[6px] border-y-transparent border-r-slate-950" />
@@ -187,10 +217,10 @@ export default function CCSConnectLayout({ children }) {
                             : 'max-h-[260px] translate-y-0 scale-100 opacity-100'
                     }`}
                 >
-                    <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#b5d8f7] via-[#cbe6fa] to-[#e3f2fd] p-5 shadow-[0_4px_10px_rgba(30,80,160,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] ring-1 ring-blue-300/50">
+                    <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#b5d8f7] via-[#cbe6fa] to-[#e3f2fd] dark:from-[#0b2a4a] dark:via-[#0d2340] dark:to-[#0a1a33] dark:ring-blue-400/20 p-5 shadow-[0_4px_10px_rgba(30,80,160,0.12),inset_0_1px_0_rgba(255,255,255,0.7)] ring-1 ring-blue-300/50">
                         <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-blue-300/30 blur-2xl" />
                         <img
-                            src="/images/ccs-connect-logo.png"
+                            src="/images/ccs-connect-logo.webp"
                             alt=""
                             aria-hidden="true"
                             draggable={false}
@@ -253,14 +283,15 @@ export default function CCSConnectLayout({ children }) {
                 </div>
 
                 <nav className="mt-9 space-y-2">
-                    {navigationItems.map(
+                    {items.map(
                         ({ label, href, icon: Icon }, index) => (
                             <a
                                 key={label}
                                 href={href}
                                 onClick={closeMobileSidebar}
+                                aria-current={index === activeIndex ? 'page' : undefined}
                                 className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
-                                    index === 0
+                                    index === activeIndex
                                         ? 'bg-blue-100 text-blue-700'
                                         : 'text-slate-700 hover:translate-x-1 hover:bg-blue-50 hover:text-blue-700'
                                 }`}
@@ -324,6 +355,7 @@ export default function CCSConnectLayout({ children }) {
                         </div>
 
                         <div className="flex items-center gap-2">
+                            <ThemeToggle />
                             <button
                                 type="button"
                                 className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
@@ -352,7 +384,7 @@ export default function CCSConnectLayout({ children }) {
                                             {userName}
                                         </p>
                                         <p className="text-[11px] text-slate-400">
-                                            Student
+                                            {roleLabels[user.role] ?? 'Student'}
                                         </p>
                                     </div>
                                 </button>
@@ -400,7 +432,7 @@ export default function CCSConnectLayout({ children }) {
 
                 {/* Page Content */}
                 <main className="px-4 pb-8 sm:px-6 lg:px-8">
-                    {children}
+                    {pendingPage ? <PageSkeleton path={pendingPage} /> : children}
                 </main>
             </div>
         </div>

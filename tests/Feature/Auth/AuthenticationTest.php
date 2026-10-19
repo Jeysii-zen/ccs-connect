@@ -139,9 +139,10 @@ test('unknown login identifier creates a failed login attempt without a user id'
     $this->post('/login', [
         'login_identifier' => $identifier,
         'password' => 'wrong-password',
-    ]);
+    ])->assertSessionHasErrors(['login_identifier' => trans('auth.failed')]);
 
     $this->assertGuest();
+    $this->assertDatabaseCount('activity_logs', 0);
 
     $this->assertDatabaseHas('login_attempts', [
         'user_id' => null,
